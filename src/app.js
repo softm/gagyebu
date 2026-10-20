@@ -1,7 +1,7 @@
 import {KINDS,COLORS,initialState,money,isoDate,monthKey,shiftMonth,getPeriod,currentPeriodMonth,getSummary,getAccountBalances,calculateExpression,duplicateOf,suggestCategory,parsePastedLines,parseCsv,validateBackup,createDemoState} from './domain.js';
 import {loadState,saveState,loadUserState,loadUserDirty,loadUserSynced,saveUserState} from './db.js';
 import {CloudService} from './cloud.js';
-import {mergeGuestLedger} from './ledger-sync.js';
+import {mergeGuestLedger,rebaseOfflineChanges} from './ledger-sync.js';
 let state, busy=false, pendingImport=[], modalContext=null;
 let authUser=null,activeUid=null,cloudReady=true,localDirty=false,cloudStatus='unconfigured',cloudMessage='';
 let latestRemote=null;
@@ -289,9 +289,18 @@ async function handleClick(e){const button=e.target.closest('[data-action],[data
  }
  if(action==='retry-sync'){
   if(!activeUid||!cloudReady||cloud.pending)return toast('클라우드 연결이 준비되거나 이전 저장이 끝날 때까지 기다려 주세요.','error');
-  const baseline=await loadUserSynced(activeUid)||latestRemote||initialState();
-  toast('미전송 기록 재전송을 요청했습니다.');
-  cloud.queueDiff(baseline,structuredClone(state),{retry:true}).catch(e=>toast(`재전송 실패: ${e.message}`,'error'));
+  if(!latestRemote)return toast('최신 클라우드 기록을 아직 확인하지 못했습니다. 잠시 후 다시 시도하세요.','error');
+  const baseline=await loadUserSynced(activeUid)||initialState();
+  const reconciled=rebaseOfflineChanges(baseline,state,latestRemote);
+  if(reconciled.conflicts.length){
+    toast(`다른 기기와 변경사항 ${reconciled.conflicts.length}건이 충돌합니다. JSON 전체 백업 후 각각의 기록을 확인하세요. 자동 덮어쓰기는 차단했습니다.`,'error');
+    return;
+  }
+  const remoteBefore=structuredClone(latestRemote);
+  state=reconciled.ledger;
+  await saveUserState(activeUid,state,{dirty:true});localDirty=true;render();
+  toast('서로 다른 기기의 변경사항을 합쳐 클라우드 재전송을 요청했습니다.');
+  cloud.queueDiff(remoteBefore,structuredClone(state),{retry:true}).catch(e=>toast(`재전송 실패: ${e.message}`,'error'));
   return;
  }
  if(action==='dismiss-modal'){closeModal();return;}

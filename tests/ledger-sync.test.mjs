@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {initialState} from '../src/domain.js';
-import {changedDocuments,reconstructLedger,forCloudDocument,mergeGuestLedger} from '../src/ledger-sync.js';
+import {changedDocuments,reconstructLedger,forCloudDocument,mergeGuestLedger,rebaseOfflineChanges} from '../src/ledger-sync.js';
 const makeTx=(id,accountId='bank')=>({id,kind:'expense',date:'2026-10-20',title:'커피',amount:5600,status:'confirmed',accountId,categoryId:'cafe',createdAt:'2026-10-20T10:00:00Z'});
 
 test('Only changed transaction is written, never replaces the entire ledger',()=>{
@@ -47,4 +47,33 @@ test('Import skips identical IDs and relinks renamed refund source',()=>{
  const refund=ledger.transactions.find(t=>t.id==='refund');
  assert.equal(refund.refundOf,imported.id);
  assert.equal(ledger.transactions.length,3);
+});
+
+
+test('Offline changes to different transactions preserve remote edits',()=>{
+ const base=initialState();base.transactions.push(makeTx('a'),makeTx('b'));
+ const local=structuredClone(base),remote=structuredClone(base);
+ local.transactions[0].title='로컬 변경';remote.transactions[1].title='다른 기기 변경';
+ local.events.push({id:'local-event',action:'update',entityId:'a',createdAt:'2026-10-20T01:00:00Z'});
+ remote.events.push({id:'remote-event',action:'update',entityId:'b',createdAt:'2026-10-20T02:00:00Z'});
+ const out=rebaseOfflineChanges(base,local,remote);
+ assert.deepEqual(out.conflicts,[]);
+ assert.equal(out.ledger.transactions.find(x=>x.id==='a').title,'로컬 변경');
+ assert.equal(out.ledger.transactions.find(x=>x.id==='b').title,'다른 기기 변경');
+ assert.equal(out.ledger.events.length,2);
+});
+test('Simultaneous edits of same transaction halt before write',()=>{
+ const base=initialState();base.transactions.push(makeTx('a'));
+ const local=structuredClone(base),remote=structuredClone(base);
+ local.transactions[0].title='로컬';remote.transactions[0].title='원격';
+ const out=rebaseOfflineChanges(base,local,remote);
+ assert.equal(out.ledger,null);assert.deepEqual(out.conflicts,['transactions/a']);
+});
+test('Different settings merge; same setting conflict does not overwrite',()=>{
+ const base=initialState(),local=structuredClone(base),remote=structuredClone(base);
+ local.settings.theme='dark';remote.settings.monthlyBudget=555000;
+ const ok=rebaseOfflineChanges(base,local,remote);
+ assert.equal(ok.ledger.settings.theme,'dark');assert.equal(ok.ledger.settings.monthlyBudget,555000);
+ remote.settings.theme='something-else';
+ assert.ok(rebaseOfflineChanges(base,local,remote).conflicts.includes('settings/theme'));
 });

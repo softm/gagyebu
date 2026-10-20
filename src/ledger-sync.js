@@ -93,3 +93,48 @@ export function mergeGuestLedger(remote,guest,newId=()=>crypto.randomUUID()){
   validateBackup(result);
   return {ledger:result,imported,skipped};
 }
+
+/**
+ * Three-way offline reconciliation. Never silently overwrite edits from a
+ * different device. The caller must halt upload when conflicts are returned.
+ * The user's pending local snapshot is preserved independently in IndexedDB.
+ */
+export function rebaseOfflineChanges(baseline,local,remote){
+  validateBackup(baseline);validateBackup(local);validateBackup(remote);
+  const output=structuredClone(remote),conflicts=[];
+  const equal=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
+  for(const collection of COLLECTIONS){
+    const baseMap=new Map(baseline[collection].map(x=>[x.id,x]));
+    const localMap=new Map(local[collection].map(x=>[x.id,x]));
+    const remoteMap=new Map(remote[collection].map(x=>[x.id,x]));
+    const outMap=new Map(output[collection].map(x=>[x.id,x]));
+    for(const id of new Set([...baseMap.keys(),...localMap.keys()])){
+      const old=baseMap.get(id),mine=localMap.get(id),theirs=remoteMap.get(id);
+      if(equal(old,mine))continue;
+      if(!equal(old,theirs)&&!equal(mine,theirs)){
+        conflicts.push(`${collection}/${id}`);continue;
+      }
+      if(mine===undefined)outMap.delete(id);
+      else outMap.set(id,structuredClone(mine));
+    }
+    output[collection]=[...outMap.values()];
+  }
+  for(const name of ['settings','budgets']){
+    for(const key of new Set([...Object.keys(baseline[name]),...Object.keys(local[name])])){
+      const old=baseline[name][key],mine=local[name][key],theirs=remote[name][key];
+      if(equal(old,mine))continue;
+      if(!equal(old,theirs)&&!equal(mine,theirs)){
+        conflicts.push(`${name}/${key}`);continue;
+      }
+      if(mine===undefined)delete output[name][key];
+      else output[name][key]=structuredClone(mine);
+    }
+  }
+  // Append-only action history is naturally mergeable by immutable event ID.
+  const events=new Map((remote.events||[]).map(e=>[e.id,e]));
+  for(const e of local.events||[])if(!events.has(e.id))events.set(e.id,e);
+  output.events=[...events.values()].sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt))).slice(-500);
+  if(conflicts.length)return {ledger:null,conflicts};
+  validateBackup(output);
+  return {ledger:output,conflicts:[]};
+}
