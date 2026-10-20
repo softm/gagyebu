@@ -67,7 +67,7 @@ export class CloudService{
   async _onUser(user){
     const epoch=++this.epoch;
     this.unsubscribe.forEach(fn=>fn());this.unsubscribe=[];this.parts={};this.lastRemote=null;
-    this.user=user;this.ready=false;this.pending=0;this.queue=Promise.resolve();this.syncBlocked=false;this.syncBlocked=false;
+    this.user=user;this.ready=false;this.pending=0;this.queue=Promise.resolve();this.syncBlocked=false;
     await this.handlers.onAuth?.(user);
     if(!user){this._status('signedout');return;}
     this._status('loading');

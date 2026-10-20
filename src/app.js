@@ -1,5 +1,5 @@
 import {KINDS,COLORS,initialState,money,isoDate,monthKey,shiftMonth,getPeriod,currentPeriodMonth,getSummary,getAccountBalances,calculateExpression,duplicateOf,suggestCategory,parsePastedLines,parseCsv,validateBackup,createDemoState} from './domain.js';
-import {loadState,saveState,loadUserState,loadUserDirty,loadUserSynced,saveUserState,markUserSynced} from './db.js';
+import {loadState,saveState,loadUserState,loadUserDirty,loadUserSynced,saveUserState} from './db.js';
 import {CloudService} from './cloud.js';
 import {mergeGuestLedger} from './ledger-sync.js';
 let state, busy=false, pendingImport=[], modalContext=null;
