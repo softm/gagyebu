@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: '22'
       - name: Run domain tests
-        run: node --test tests/domain.test.mjs
+        run: node --test tests/*.test.mjs
       - name: Check JavaScript syntax
-        run: node --check src/app.js
+        run: |
+          for file in src/*.js functions/*.js functions/*.mjs; do node --check "$file"; done

@@ -1,6 +1,6 @@
 # 가계부 (`gagyebu`)
 
-> 내 기록은 내 기기에. 돈의 흐름을 한눈에 보는 로컬 우선 가계부.
+> 입력은 간단하게, 내 장부는 안전하게. 비로그인 로컬 장부와 Firebase 계정별 클라우드 장부를 제공하는 가계부.
 
 - **웹 앱:** https://softm.github.io/gagyebu/ (Pages 배포 성공 후 접속)
 - **저장소:** https://github.com/softm/gagyebu
@@ -25,6 +25,17 @@
 - `pending`은 정식 지출/수입/잔액에서 제외. 사용자가 직접 확정.
 - 모든 금액은 KRW **정수 원 단위**로 저장하며, 부동소수점 금액 누적을 하지 않음.
 
+## 로그인과 클라우드 동기화 (v0.2)
+
+- **Google · Apple**: Firebase Authentication 팝업/리디렉션 로그인 SDK 연동.
+- **카카오 · 네이버**: OAuth 인가코드를 자체 Firebase Cloud Function에서 검증하고 Firebase custom token으로 로그인하는 방식. 공급자 비밀키는 Cloud Secret Manager에만 저장.
+- **Firestore**: 사용자 UID별 `/users/{uid}/transactions`, `accounts`, `categories`, `ledger/config` 컬렉션/문서에 거래·자산·예산·설정·이벤트를 보관. 문서별 변경 동기화, 다른 기기에서 실시간 구독.
+- **Cloud Storage**: 영수증 원본(필요한 경우)을 개인 UID 경로에 저장.
+- **기존 로컬 장부**: 로그아웃하거나 Firebase 미설정 상태에서는 그대로 유지. 로그인 후 사용자가 선택하여 클라우드로 추가(클라우드 원본 보존).
+- **안전장치**: 사용자별 IndexedDB 로컬 캐시, Firestore UID 소유자 규칙, 동기화 실패 시 로컬 보존·재전송, JSON 전체 백업/복원.
+
+⚠️ **Firebase 전용 프로젝트 설정이 아직 입력되지 않았으므로, 현재 공개 Pages는 기존 로컬 기능을 유지합니다.** 실제 로그인과 Firestore 저장은 [Firebase 초기 설정 안내](docs/FIREBASE_SETUP.md)의 프로젝트/인증/Secrets/Functions/Storage 배포가 완료되어야 활성화됩니다. 코드는 구현되어 있으나 실제 운영 계정·Firestore 쓰기 검증은 아직 수행하지 않았습니다. Google 외 소셜 계정을 같은 장부에 묶는 기능은 아직 없습니다.
+
 ## 로컬 실행
 
 외부 패키지가 필요 없는 정적 웹앱입니다. ES 모듈과 IndexedDB 때문에 `file://`이 아닌 HTTP 서버에서 실행해야 합니다.
@@ -37,23 +48,23 @@ python3 -m http.server 8000
 테스트:
 
 ```sh
-node --test tests/domain.test.mjs
+node --test tests/*.test.mjs
 node --check src/app.js
 ```
 
 ## 배포
 
-`main` 브랜치의 루트 디렉터리를 GitHub Pages 기본 브랜치 배포로 게시합니다. **Repository Settings → Pages → Build and deployment → Source: Deploy from a branch / Branch: main / Folder: /(root)** 를 사용합니다. `Validate app` GitHub Actions 워크플로는 테스트만 수행하고 중복 배포를 하지 않습니다.
+`main` 브랜치 푸시 시 `Test and deploy to GitHub Pages` 워크플로가 자동으로 테스트 → 정적 파일 배포를 진행합니다. **Repository Settings → Pages → Build and deployment → Source: GitHub Actions**가 선택돼 있어야 합니다.
 
 ## 데이터 및 개인정보
 
-사용자 거래와 영수증은 기본적으로 **현재 브라우저의 IndexedDB에만 보관**됩니다. GitHub Pages는 **프런트엔드 코드만** 호스팅합니다. 쿠키 기반 로그인/서버 동기화/은행 계좌 조회는 지원하지 않습니다.
+Firebase를 활성화하지 않은 **비로그인 장부**는 IndexedDB에만 보관됩니다. Firebase를 활성화하면 사용자가 SNS 로그인한 계정의 UID 아래로 가계부 데이터를 Firestore에, 영수증 원본을 Storage에 저장합니다. GitHub Pages는 프런트엔드 코드만 호스팅하고 API 비밀키는 Firebase Functions에만 보관합니다. 은행 계좌 자동 조회는 제공하지 않습니다.
 
 기기 변경, 캐시 삭제, 브라우저 데이터 초기화, 사생활 보호모드에서는 기록을 잃을 수 있습니다. **설정 → JSON 전체 백업**을 수시로 이용하세요. 백업 JSON에는 거래 내용과 첨부한 영수증이 포함될 수 있으니 외부 공개 금지입니다.
 
 ## 제한과 후속 계획
 
-- 금융기관 자동연동, SMS/Android 알림 직접 읽기, OCR, 회원별 클라우드 동기화, 공동 장부는 **미구현**.
+- 금융기관 자동연동, SMS/Android 알림 직접 읽기, OCR, 여러 SNS 계정을 한 장부로 연결, 공동 장부는 **미구현**.
 - 텍스트 붙여넣기 및 CSV는 형식에 따라 인식에 한계가 있으며 항상 사용자 검토 후 확정합니다.
 - 초기 카드 미상환액은 신용카드 자산의 `초기 잔액`에 입력합니다.
 - 개인/공동 정산의 전체 복식부기 및 다중통화는 후속 설계 대상.
