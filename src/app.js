@@ -58,7 +58,7 @@ function render(){
  const existing=document.documentElement.dataset.theme;document.documentElement.dataset.theme=state.settings.theme||'light';
  const nowCount=pendingCount();const nav= NAV.map(([tab,label,icon])=>`<button class="nav-link ${ui.tab===tab?'active':''}" data-tab="${tab}" aria-current="${ui.tab===tab?'page':'false'}">${ico(icon,20)}<span>${label}</span>${tab==='transactions'&&nowCount?`<b class="nav-counter">${nowCount}</b>`:''}</button>`).join('');
  $('#desktopNav').innerHTML=nav;$('#mobileNav').innerHTML=nav;$('#brandSub').textContent='차곡차곡, 나의 돈 이야기';
- $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>내 기록은 내 기기에</strong><small>로그인 없이 안전하게 시작</small></div>`;
+ $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>내 기록은 내 기기에</strong><small>로그인 없이 기기 내 보관</small></div>`;
  $('#page').innerHTML=({home:renderHome,transactions:renderTransactions,calendar:renderCalendar,analytics:renderAnalytics,accounts:renderAccounts,settings:renderSettings})[ui.tab]();
  const tabTitle=NAV.find(x=>x[0]===ui.tab)?.[1]||'가계부';$('#mobileTitle').textContent=tabTitle;
 }
@@ -140,7 +140,7 @@ function renderSettings(){
  <section class="panel"><div class="section-heading"><div><h2>백업과 데이터 관리</h2><p>내 데이터는 기본적으로 현재 브라우저의 IndexedDB에 보관됩니다.</p></div></div><div class="settings-actions">${btn(`${ico('download',17)} JSON 전체 백업`,'export-json','','btn btn-secondary')}${btn(`${ico('upload',17)} JSON 복원`,'import-json','','btn btn-secondary')}${btn(`${ico('download',17)} 거래 CSV`,'export-csv','','btn btn-secondary')}${btn(`${ico('upload',17)} CSV·문자 가져오기`,'open-import','','btn btn-secondary')}</div><div class="notice-box">${ico('alert',18)} 브라우저 데이터 삭제·기기 변경 시 기록이 사라질 수 있습니다. 다른 기기 이동 전에 JSON 파일을 백업하세요. 서버 자동 동기화 기능은 아직 없습니다.</div><div class="data-stats">현재 거래 <strong>${state.transactions.length.toLocaleString()}건</strong> · 확인 필요 <strong>${pendingCount()}건</strong> · 자산 <strong>${state.accounts.length}개</strong></div><button class="text-danger" data-action="reset-all">모든 로컬 데이터 초기화</button></section>
  <section class="panel"><div class="section-heading"><div><h2>서비스 정보</h2></div></div><p class="settings-about"><strong>가계부 · GAGYEBU</strong><br/>기록을 더 간단하게, 돈의 흐름은 더 선명하게.</p><p class="settings-about">버전 0.1.0 · 오프라인 우선 웹앱(PWA) · 수동입력/CSV/문자 붙여넣기 지원 · SMS 직접 읽기, 은행 연동, 클라우드 동기화는 제공하지 않습니다.</p><a href="https://github.com/softm/gagyebu" target="_blank" rel="noopener noreferrer" class="inline-link">GitHub 프로젝트 ${ico('arrowright',15)}</a></section></div>`;
 }
-function openModal(content,context={}){modalContext=context;$('#modalHost').innerHTML=`<div class="modal-backdrop" data-action="dismiss-modal"><div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(context.title||'상세 입력')}" onclick="event.stopPropagation()"><div class="dialog-head"><div><p class="eyebrow">GAGYEBU</p><h2>${esc(context.title||'입력')}</h2></div><button class="icon-btn" data-action="dismiss-modal" aria-label="닫기">${ico('close',22)}</button></div><div class="dialog-content">${content}</div></div></div>`;document.body.classList.add('modal-open');setTimeout(()=>$('#modalHost input:not([type=hidden]),#modalHost select,#modalHost textarea')?.focus(),30);}
+function openModal(content,context={}){modalContext=context;$('#modalHost').innerHTML=`<div class="modal-backdrop" data-action="dismiss-modal"><div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(context.title||'상세 입력')}"><div class="dialog-head"><div><p class="eyebrow">GAGYEBU</p><h2>${esc(context.title||'입력')}</h2></div><button class="icon-btn" data-action="dismiss-modal" aria-label="닫기">${ico('close',22)}</button></div><div class="dialog-content">${content}</div></div></div>`;document.body.classList.add('modal-open');setTimeout(()=>$('#modalHost input:not([type=hidden]),#modalHost select,#modalHost textarea')?.focus(),30);}
 function closeModal(){modalContext=null;$('#modalHost').innerHTML='';document.body.classList.remove('modal-open');}
 const optionAccounts=(selected)=>state.accounts.map(a=>`<option value="${esc(a.id)}" ${a.id===selected?'selected':''}>${esc(a.name)}${a.kind==='card'?' · 카드':''}</option>`).join('');
 const optionCategories=(selected,type='expense')=>state.categories.filter(c=>c.type===type).map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.icon)} ${esc(c.name)}</option>`).join('');
@@ -211,7 +211,7 @@ function exportCsv(){const header=['날짜','내역','금액','구분','계좌',
 async function restoreJson(file){if(file.size>12000000){toast('12MB 이하의 JSON 파일만 복원할 수 있습니다.','error');return;}
  try{const data=JSON.parse(await file.text());validateBackup(data);if(!window.confirm(`백업 거래 ${data.transactions.length}건으로 현재 거래 ${state.transactions.length}건을 전체 교체합니다. 기존 기록을 백업하셨나요?`))return;
  await saveState(data);state=data;ui.month=currentPeriodMonth(state.settings.periodStartDay);closeModal();render();toast('백업에서 복원했습니다.');}catch(e){toast(`복원 실패: ${e.message}`,'error');}}
-async function handleClick(e){const button=e.target.closest('[data-action],[data-tab],[data-filter],[data-day]');if(!button)return;
+async function handleClick(e){const button=e.target.closest('[data-action],[data-tab],[data-filter],[data-day]');if(!button || (button.classList.contains('modal-backdrop') && e.target.closest('.dialog')))return;
  if(button.dataset.tab){ui.tab=button.dataset.tab;ui.day=null;ui.visible=80;render();window.scrollTo({top:0,behavior:'instant'});return;}
  if(button.dataset.filter){ui.filter=button.dataset.filter;ui.visible=80;render();return;}
  if(button.dataset.day){ui.day=button.dataset.day;render();return;}
@@ -231,7 +231,7 @@ async function handleClick(e){const button=e.target.closest('[data-action],[data
  if(action==='edit-account'){openAccount(acc(tid));return;}
  if(action==='delete-account'){if(!window.confirm('이 자산을 삭제할까요?'))return;closeModal();await mutate(s=>{s.accounts=s.accounts.filter(a=>a.id!==tid);},'자산을 삭제했습니다.');return;}
  if(action==='new-transfer'){openTransaction(null,{kind:'transfer',accountId:'cash',toAccountId:'bank'});return;}
- if(action==='new-repayment'){const bank=state.accounts.find(a=>a.kind==='bank'||a.kind==='cash'),card=state.accounts.find(a=>a.kind==='card');if(!card){toast('먼저 신용카드 자산을 추가해주세요.','error');return;}openTransaction(null,{kind:'repayment',accountId:bank?.id,toAccountId:card.id,title:'카드대금 상환'});return;}
+ if(action==='new-repayment'){const bank=state.accounts.find(a=>a.kind==='bank')||state.accounts.find(a=>a.kind==='cash'),card=state.accounts.find(a=>a.kind==='card');if(!card){toast('먼저 신용카드 자산을 추가해주세요.','error');return;}openTransaction(null,{kind:'repayment',accountId:bank?.id,toAccountId:card.id,title:'카드대금 상환'});return;}
  if(action==='add-category'){openCategory();return;}
  if(action==='edit-category'){openCategory(category(tid));return;}
  if(action==='budget-category'){openBudget(tid);return;}
@@ -254,6 +254,7 @@ let searchTimer;
 function handleInput(e){
  if(e.target.id==='searchInput'){ui.query=e.target.value;clearTimeout(searchTimer);const cursor=e.target.selectionStart;searchTimer=setTimeout(()=>{render();const input=$('#searchInput');if(input){input.focus();input.setSelectionRange(cursor,cursor);}},240);}
  if(e.target.closest('#transactionForm')&&e.target.name==='expression')updateCalcPreview();
+ if(e.target.closest('#transactionForm')&&e.target.name==='title'){const f=$('#transactionForm');const kind=f.querySelector('[name="kind"]:checked')?.value;const c=f.elements.namedItem('categoryId');const suggested=suggestCategory(e.target.value,kind);if((kind==='expense'||kind==='income')&&(c.value==='other-expense'||c.value==='other-income')&&suggested!==c.value)c.value=suggested;}
 }
 function handleChange(e){if(e.target.closest('#transactionForm')&&e.target.name==='kind')updateTransactionKind();
  if(e.target.id==='kindFilter'){ui.kindFilter=e.target.value;ui.visible=80;render();}
