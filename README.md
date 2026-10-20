@@ -43,7 +43,7 @@ node --check src/app.js
 
 ## 배포
 
-`main` 브랜치 푸시 시 `Test and deploy to GitHub Pages` 워크플로가 자동으로 테스트 → 정적 파일 배포를 진행합니다. **Repository Settings → Pages → Build and deployment → Source: GitHub Actions**가 선택돼 있어야 합니다.
+`main` 브랜치의 루트 디렉터리를 GitHub Pages 기본 브랜치 배포로 게시합니다. **Repository Settings → Pages → Build and deployment → Source: Deploy from a branch / Branch: main / Folder: /(root)** 를 사용합니다. `Validate app` GitHub Actions 워크플로는 테스트만 수행하고 중복 배포를 하지 않습니다.
 
 ## 데이터 및 개인정보
 
