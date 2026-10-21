@@ -365,7 +365,8 @@ async function boot(){
  $('#csvInput').addEventListener('change',async e=>{if(e.target.files[0])await fileToCsv(e.target.files[0]);e.target.value='';});
  $('#jsonInput').addEventListener('change',async e=>{if(e.target.files[0])await restoreJson(e.target.files[0]);e.target.value='';});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalHost').innerHTML){closeModal();return;}if(e.key.toLowerCase()==='n'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!$('#modalHost').innerHTML&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();openTransaction();}});
- if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register(new URL('../sw.js',import.meta.url),{scope:'../'}).catch(err=>console.warn('PWA 등록 실패',err));
+ // SOFTM-PWA-SCOPE 날짜:20261022 : Pages 하위 경로의 PWA가 사이트 루트 범위를 요청해 등록 실패하지 않게 함
+ if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register(new URL('../sw.js',import.meta.url),{scope:new URL('../',import.meta.url).pathname}).catch(err=>console.warn('PWA 등록 실패',err));
  cloud.start().catch(err=>toast(`클라우드 연결 실패: ${err.message}`,'error'));
 }
 boot();
