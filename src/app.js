@@ -2,6 +2,7 @@ import {KINDS,COLORS,initialState,money,isoDate,monthKey,shiftMonth,getPeriod,cu
 import {loadState,saveState,loadUserState,loadUserDirty,loadUserSynced,saveUserState} from './db.js';
 import {CloudService} from './cloud.js';
 import {mergeGuestLedger,rebaseOfflineChanges} from './ledger-sync.js';
+import {initAds,updateAdContext} from './ads.js'; // SOFTM-ADFIT 날짜:20261022 : 거래 데이터와 분리된 광고 수명주기 연결
 let state, busy=false, pendingImport=[], modalContext=null;
 let authUser=null,activeUid=null,cloudReady=true,localDirty=false,cloudStatus='unconfigured',cloudMessage='';
 let latestRemote=null;
@@ -95,6 +96,7 @@ function render(){
  $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>${activeUid?'내 전용 클라우드 장부':'로컬 우선 가계부'}</strong><small>${esc(syncDescription())}</small></div><button class="sidebar-account-btn" data-tab="settings">${ico('shield',16)} ${activeUid?'내 계정·동기화':'로그인·동기화'}</button>`;
  $('#page').innerHTML=({home:renderHome,transactions:renderTransactions,calendar:renderCalendar,analytics:renderAnalytics,accounts:renderAccounts,settings:renderSettings})[ui.tab]();
  const tabTitle=NAV.find(x=>x[0]===ui.tab)?.[1]||'가계부';$('#mobileTitle').textContent=tabTitle;
+ updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:!!modalContext}); // SOFTM-ADFIT 날짜:20261022 : 화면 전환에서 광고 위치와 보호 상태만 갱신
 }
 function syncDescription(){
  if(!cloud.isConfigured())return 'Firebase 프로젝트 연결 전 · 이 기기에 저장';
@@ -192,10 +194,11 @@ function renderSettings(){
  <section class="panel"><div class="section-heading"><div><h2>예산과 정산기간</h2><p>예산과 월 시작일을 정해주세요.</p></div></div><form id="settingsForm" class="form-stacked"><label>월 예산 (원)<input name="monthlyBudget" inputmode="numeric" type="number" min="0" step="1" value="${s.monthlyBudget||0}" required /></label><label>정산 시작일<select name="periodStartDay">${Array.from({length:28},(_,i)=>i+1).map(v=>`<option value="${v}" ${v===Number(s.periodStartDay)?'selected':''}>매월 ${v}일</option>`).join('')}</select></label><label>화면 테마<select name="theme"><option value="light" ${s.theme!=='dark'?'selected':''}>라이트</option><option value="dark" ${s.theme==='dark'?'selected':''}>다크</option></select></label><button type="submit" class="btn btn-primary">설정 저장</button></form></section>
  <section class="panel"><div class="section-heading"><div><h2>나만의 분류</h2><p>거래 입력 시 선택할 수 있습니다.</p></div><button class="icon-btn" data-action="add-category" aria-label="카테고리 추가">${ico('plus',20)}</button></div><div class="category-settings">${state.categories.map(c=>`<div><span>${esc(c.icon)} ${esc(c.name)} <small>${c.type==='income'?'수입':'지출'}</small></span><button class="icon-btn small" data-action="edit-category" data-id="${esc(c.id)}" aria-label="분류 수정">${ico('edit',16)}</button></div>`).join('')}</div></section>
  <section class="panel"><div class="section-heading"><div><h2>백업과 데이터 관리</h2><p>비로그인 장부는 브라우저에, 로그인 장부는 사용자별 Firestore와 기기 캐시에 보관됩니다.</p></div></div><div class="settings-actions">${btn(`${ico('download',17)} JSON 전체 백업`,'export-json','','btn btn-secondary')}${btn(`${ico('upload',17)} JSON 복원`,'import-json','','btn btn-secondary')}${btn(`${ico('download',17)} 거래 CSV`,'export-csv','','btn btn-secondary')}${btn(`${ico('upload',17)} CSV·문자 가져오기`,'open-import','','btn btn-secondary')}</div><div class="notice-box">${ico('alert',18)} ${activeUid?'로그인 장부는 Firestore에 저장되지만 동기화 완료 전에는 기기 기록을 지우지 마세요. 영수증은 Cloud Storage를 사용합니다.':'비로그인 기록은 이 브라우저에만 보관됩니다. 기기 변경 전 JSON 백업을 내려받으세요.'}</div><div class="data-stats">현재 거래 <strong>${state.transactions.length.toLocaleString()}건</strong> · 확인 필요 <strong>${pendingCount()}건</strong> · 자산 <strong>${state.accounts.length}개</strong></div><button class="text-danger" data-action="reset-all">${activeUid?'로그인 장부 전체 초기화':'로컬 장부 전체 초기화'}</button></section>
- <section class="panel"><div class="section-heading"><div><h2>서비스 정보</h2></div></div><p class="settings-about"><strong>가계부 · GAGYEBU</strong><br/>기록을 더 간단하게, 돈의 흐름은 더 선명하게.</p><p class="settings-about">버전 0.2.0 · 오프라인 우선 웹앱(PWA) · Google/카카오/네이버 로그인 · Firebase Auth/Firestore · 수동입력/CSV/문자 붙여넣기 · 금융기관 자동 조회는 제공하지 않습니다.</p><a href="https://github.com/softm/gagyebu" target="_blank" rel="noopener noreferrer" class="inline-link">GitHub 프로젝트 ${ico('arrowright',15)}</a></section></div>`;
+ <section class="panel"><div class="section-heading"><div><h2>서비스 정보</h2></div></div><p class="settings-about"><strong>가계부 · GAGYEBU</strong><br/>기록을 더 간단하게, 돈의 흐름은 더 선명하게.</p><p class="settings-about">버전 0.3.0 · 오프라인 우선 웹앱(PWA) · Google/카카오/네이버 로그인 · Firebase Auth/Firestore · 수동입력/CSV/문자 붙여넣기 · 금융기관 자동 조회는 제공하지 않습니다.</p><a href="https://github.com/softm/gagyebu" target="_blank" rel="noopener noreferrer" class="inline-link">GitHub 프로젝트 ${ico('arrowright',15)}</a><p class="settings-about"><a class="inline-link" href="./privacy.html" target="_blank" rel="noopener noreferrer">개인정보처리방침</a><br/>조회 화면에는 Kakao AdFit 광고가 표시될 수 있습니다. 하단 광고는 접을 수 있으며 거래 입력·자산·설정 화면에는 표시하지 않습니다.</p></section></div>`;
 }
-function openModal(content,context={}){modalContext=context;$('#modalHost').innerHTML=`<div class="modal-backdrop" data-action="dismiss-modal"><div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(context.title||'상세 입력')}"><div class="dialog-head"><div><p class="eyebrow">GAGYEBU</p><h2>${esc(context.title||'입력')}</h2></div><button class="icon-btn" data-action="dismiss-modal" aria-label="닫기">${ico('close',22)}</button></div><div class="dialog-content">${content}</div></div></div>`;document.body.classList.add('modal-open');setTimeout(()=>$('#modalHost input:not([type=hidden]),#modalHost select,#modalHost textarea')?.focus(),30);}
-function closeModal(){modalContext=null;$('#modalHost').innerHTML='';document.body.classList.remove('modal-open');}
+// SOFTM-ADFIT 날짜:20261022 : 입력·가져오기·인증 모달을 여는 즉시 광고 리소스를 정리
+function openModal(content,context={}){modalContext=context;$('#modalHost').innerHTML=`<div class="modal-backdrop" data-action="dismiss-modal"><div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(context.title||'상세 입력')}"><div class="dialog-head"><div><p class="eyebrow">GAGYEBU</p><h2>${esc(context.title||'입력')}</h2></div><button class="icon-btn" data-action="dismiss-modal" aria-label="닫기">${ico('close',22)}</button></div><div class="dialog-content">${content}</div></div></div>`;document.body.classList.add('modal-open');updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:true});setTimeout(()=>$('#modalHost input:not([type=hidden]),#modalHost select,#modalHost textarea')?.focus(),30);}
+function closeModal(){modalContext=null;$('#modalHost').innerHTML='';document.body.classList.remove('modal-open');updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:false});} // SOFTM-ADFIT 날짜:20261022 : 입력을 마친 뒤 사용자의 광고 접힘 상태로 복원
 const optionAccounts=(selected)=>state.accounts.map(a=>`<option value="${esc(a.id)}" ${a.id===selected?'selected':''}>${esc(a.name)}${a.kind==='card'?' · 카드':''}</option>`).join('');
 const optionCategories=(selected,type='expense')=>state.categories.filter(c=>c.type===type).map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.icon)} ${esc(c.name)}</option>`).join('');
 function openTransaction(t=null,preset={}){
@@ -355,6 +358,7 @@ function handleChange(e){if(e.target.closest('#transactionForm')&&e.target.name=
  if(e.target.id==='categoryFilter'){ui.categoryFilter=e.target.value;ui.visible=80;render();}
 }
 async function boot(){
+ initAds(); // SOFTM-ADFIT 날짜:20261022 : 렌더링마다 SDK를 다시 불러오지 않도록 한 번 초기화
  try{state=await loadState();validateBackup(state);ui.month=currentPeriodMonth(state.settings.periodStartDay);render();}
  catch(e){$('#page').innerHTML=`<div class="boot-error"><h1>저장소를 열 수 없습니다</h1><p>${esc(e.message)}</p><p>브라우저의 사이트 데이터 저장 허용 여부를 확인하거나 일반 창에서 다시 시도하세요.</p></div>`;return;}
  document.addEventListener('click',handleClick);document.addEventListener('submit',handleSubmit);document.addEventListener('input',handleInput);document.addEventListener('change',handleChange);
@@ -365,3 +369,4 @@ async function boot(){
  cloud.start().catch(err=>toast(`클라우드 연결 실패: ${err.message}`,'error'));
 }
 boot();
+
