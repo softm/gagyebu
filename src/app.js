@@ -136,13 +136,35 @@ function transactionRow(t,compact=false){
 function renderHome(){const s=currentSummary(),total=Math.max(1,s.budget),ratio=Math.max(0,Math.min(100,s.expense/total*100));
  const ordered=state.transactions.filter(t=>isWithin(t.date,s.period)).sort(sortTx);const pending=state.transactions.filter(t=>t.status==='pending').sort(sortTx);
  const top=Object.entries(s.byCategory).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
- return `${topBar('돈의 흐름, 한눈에','오늘의 기록을 정리하고 이번 기간의 흐름을 살펴보세요.',true,btn(`${ico('plus',17)} 기록 추가`,'add-transaction'))}
+ return `${topBar('오늘의 지출이, 내일의 여유가 됩니다','쉽게 기록하고, 한눈에 보고, 꾸준히 관리해 보세요.',true,btn(`${ico('plus',17)} 기록 추가`,'add-transaction'))}
  ${!authUser&&cloud.isConfigured()?'<div class="account-prompt">여러 기기에서 기록을 쓰고 싶으신가요? <button data-tab="settings">로그인·동기화 설정 →</button></div>':''}
- <section class="hero-panel"><div class="hero-content"><div class="eyebrow light">이번 기간 지출</div><div class="hero-total">${m(s.expense)}</div><p>수입 <strong>${m(s.income)}</strong> · 순변동 <strong>${s.net<0?'-':'+'}${m(Math.abs(s.net))}</strong></p><button class="hero-action" data-tab="transactions">내역 전체 보기 ${ico('arrowright',16)}</button></div><div class="hero-decor" aria-hidden="true"><div class="hero-circle c1"></div><div class="hero-circle c2"></div><svg viewBox="0 0 240 100" class="hero-curve"><path d="M0 80 Q45 20 80 55T155 24T240 8" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="4" stroke-linecap="round"/></svg></div></section>
- <section class="summary-grid"><div class="metric-card"><span class="metric-icon positive">${ico('arrowup',18)}</span><div class="metric-label">수입</div><div class="metric-value">${m(s.income)}</div><p>이번 정산기간 입금</p></div><div class="metric-card"><span class="metric-icon negative">${ico('arrowdown',18)}</span><div class="metric-label">지출</div><div class="metric-value">${m(s.expense)}</div><p>환불 금액 반영</p></div><div class="metric-card"><span class="metric-icon violet">${ico('wallet',18)}</span><div class="metric-label">예산 잔여</div><div class="metric-value ${s.remaining<0?'negative':''}">${m(s.remaining)}</div><div class="mini-progress"><i style="width:${ratio}%"></i></div></div></section>
+ <section class="hero-panel">
+   <div class="hero-content">
+     <div class="eyebrow light">이번 달 나의 소비</div>
+     <div class="hero-total">${m(s.expense)}</div>
+     <p>수입 <strong>${m(s.income)}</strong><span class="hero-dot">•</span> 남은 예산 <strong>${m(s.remaining)}</strong></p>
+     <div class="hero-actions">
+       <button class="hero-action primary" data-action="add-transaction">${ico('plus',16)} 지출 기록하기</button>
+       <button class="hero-action" data-tab="analytics">소비 분석 ${ico('arrowright',16)}</button>
+     </div>
+   </div>
+   <div class="hero-mascot" aria-hidden="true">
+      <div class="hero-coin">₩</div>
+      <img src="./icons/icon.svg" alt="" />
+      <div class="hero-bubble">오늘도 차곡차곡 ✨</div>
+   </div>
+ </section>
+ <section class="summary-grid">
+   <div class="metric-card income"><span class="metric-icon positive">${ico('arrowup',18)}</span><div><div class="metric-label">월 수입</div><div class="metric-value">${m(s.income)}</div><p>이번 정산기간 들어온 돈</p></div></div>
+   <div class="metric-card expense"><span class="metric-icon negative">${ico('arrowdown',18)}</span><div><div class="metric-label">월 지출</div><div class="metric-value">${m(s.expense)}</div><p>환불 금액 반영</p></div></div>
+   <div class="metric-card budget"><span class="metric-icon violet">${ico('wallet',18)}</span><div><div class="metric-label">남은 예산</div><div class="metric-value ${s.remaining<0?'negative':''}">${m(s.remaining)}</div><div class="mini-progress"><i style="width:${ratio}%"></i></div></div></div>
+ </section>
  ${pending.length?`<section class="attention-card"><div class="attention-icon">${ico('clock',24)}</div><div><h3>확인할 거래가 ${pending.length}건 있어요</h3><p>검토 전 기록은 지출과 자산 잔액에 포함되지 않아요.</p></div><button data-action="view-pending" class="btn btn-light">정리하기 ${ico('arrowright',16)}</button></section>`:''}
- <div class="home-columns"><section class="panel"><div class="section-heading"><div><h2>최근 거래</h2><p>최근의 입출금 내역</p></div><button class="text-btn" data-tab="transactions">전체 보기 ${ico('chevron',16)}</button></div>${recentList(ordered,6)}</section><section class="panel"><div class="section-heading"><div><h2>지출 구성</h2><p>어디에 가장 많이 썼을까요?</p></div><button class="text-btn" data-tab="analytics">분석 보기 ${ico('chevron',16)}</button></div>${renderDonut(s,top)}<div class="quick-card"><span>${ico('spark',20)}</span><div><strong>기록 습관 만들기</strong><p>하루 1분, 잊기 전에 소비를 남겨보세요.</p></div></div></section></div>
- ${!state.transactions.length?`<div class="starter-banner"><div><strong>처음 사용하시나요?</strong><p>체험용 거래를 넣고 화면을 둘러본 뒤 전체 삭제할 수 있어요.</p></div>${btn('샘플 데이터로 둘러보기','load-demo','','btn btn-secondary')}</div>`:''}`;
+ <div class="home-columns">
+   <section class="panel transactions-panel"><div class="section-heading"><div><span class="section-kicker">RECENT</span><h2>최근 거래</h2><p>최근의 입출금 내역</p></div><button class="text-btn" data-tab="transactions">전체 보기 ${ico('chevron',16)}</button></div>${recentList(ordered,6)}</section>
+   <section class="panel insight-panel"><div class="section-heading"><div><span class="section-kicker">INSIGHT</span><h2>이번 달 지출 구성</h2><p>어디에 가장 많이 썼을까요?</p></div><button class="text-btn" data-tab="analytics">분석 보기 ${ico('chevron',16)}</button></div>${renderDonut(s,top)}<div class="quick-card mascot-tip"><span>🐷</span><div><strong>작은 기록이 큰 변화를 만들어요</strong><p>하루 1분, 잊기 전에 소비를 남겨보세요.</p></div></div></section>
+ </div>
+ ${!state.transactions.length?`<div class="starter-banner"><div><strong>가계부가 처음이라면</strong><p>샘플 데이터로 화면을 둘러보고 내 기록을 시작해 보세요.</p></div>${btn('샘플 데이터로 둘러보기','load-demo','','btn btn-secondary')}</div>`:''}`;
 }
 const isWithin=(d,p)=>d>=p.start&&d<p.end;
 const sortTx=(a,b)=>b.date.localeCompare(a.date)||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
