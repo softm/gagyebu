@@ -1,5 +1,5 @@
 // SOFTM-ADFIT 날짜:20261022 : 광고 모듈만 오프라인 캐시에 포함하며 외부 광고 응답은 저장하지 않음
-const CACHE='gagyebu-static-v3-adfit-20261022';
+const CACHE='gagyebu-static-v4-stitch-detail-20261023';
 const CORE=['./','./index.html','./src/app.js','./src/domain.js','./src/db.js','./src/cloud.js','./src/ledger-sync.js','./src/firebase-config.js','./src/styles.css','./src/ads.js','./src/ad-config.js','./src/ads.css','./manifest.webmanifest','./icons/icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('gagyebu-static-')&&k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]));});
