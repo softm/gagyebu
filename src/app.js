@@ -139,7 +139,7 @@ function renderHome(){const s=currentSummary(),total=Math.max(1,s.budget),ratio=
  const loggedDays=new Set(ordered.filter(t=>t.status==='confirmed').map(t=>t.date)).size;
  const expenseCats=state.categories.filter(c=>c.type==='expense').slice(0,7);
  const daily=s.expense/Math.max(1,loggedDays||1);
- return \`${topBar('오늘의 지출이 내일의 여유가 됩니다','지금 가계부로 똑똑한 소비 습관을 시작하세요! 작은 기록이 더 나은 내일을 만듭니다 :)',true,btn(\`${ico('plus',17)} 기록 추가\`,'add-transaction'))}
+ return `${topBar('오늘의 지출이 내일의 여유가 됩니다','지금 가계부로 똑똑한 소비 습관을 시작하세요! 작은 기록이 더 나은 내일을 만듭니다 :)',true,btn(`${ico('plus',17)} 기록 추가`,'add-transaction'))}
  ${!authUser&&cloud.isConfigured()?'<div class="account-prompt">여러 기기에서 기록을 쓰고 싶으신가요? <button data-tab="settings">로그인·동기화 설정 →</button></div>':''}
  <section class="hero-panel stitch-hero">
    <div class="hero-content">
@@ -176,7 +176,7 @@ function renderHome(){const s=currentSummary(),total=Math.max(1,s.budget),ratio=
      <div class="mini-progress"><i style="width:${Math.min(100,ratio)}%"></i></div>
    </div>
  </section>
- ${pending.length?\`<section class="attention-card"><div class="attention-icon">${ico('clock',24)}</div><div><h3>확인할 거래가 ${pending.length}건 있어요</h3><p>검토 전 기록은 지출과 자산 잔액에 포함되지 않아요.</p></div><button data-action="view-pending" class="btn btn-light">정리하기 ${ico('arrowright',16)}</button></section>\`:''}
+ ${pending.length?`<section class="attention-card"><div class="attention-icon">${ico('clock',24)}</div><div><h3>확인할 거래가 ${pending.length}건 있어요</h3><p>검토 전 기록은 지출과 자산 잔액에 포함되지 않아요.</p></div><button data-action="view-pending" class="btn btn-light">정리하기 ${ico('arrowright',16)}</button></section>`:''}
  <div class="home-columns stitch-split">
    <section class="panel transactions-panel">
      <div class="section-heading stitch-section-heading"><div><h2>최근 지출 내역</h2><p>복잡한 설정 없이 간편하게 기록하세요.</p></div><button class="text-btn" data-tab="transactions">전체 보기 ${ico('chevron',16)}</button></div>
@@ -193,17 +193,17 @@ function renderHome(){const s=currentSummary(),total=Math.max(1,s.budget),ratio=
  <div class="stitch-secondary-grid">
    <section class="panel habit-panel">
      <div class="section-heading stitch-section-heading"><div><h2>꾸준히 기록하는 습관 만들기</h2><p>작은 기록이 큰 변화를 만듭니다.</p></div><span class="habit-badge">${loggedDays}일 기록</span></div>
-     <div class="habit-days">${Array.from({length:7},(_,i)=>\`<span class="${i<Math.min(7,loggedDays)?'done':''}">${['월','화','수','목','금','토','일'][i]}</span>\`).join('')}</div>
+     <div class="habit-days">${Array.from({length:7},(_,i)=>`<span class="${i<Math.min(7,loggedDays)?'done':''}">${['월','화','수','목','금','토','일'][i]}</span>`).join('')}</div>
      <div class="habit-note">${loggedDays?'이번 기간에도 차곡차곡 기록하고 있어요 ✨':'오늘 첫 기록을 남겨보세요 🐷'}</div>
      <button class="text-btn habit-link" data-tab="calendar">달력 전체보기 ${ico('chevron',16)}</button>
    </section>
    <section class="panel category-preview">
      <div class="section-heading stitch-section-heading"><div><h2>다양한 카테고리로 더 깔끔하게</h2><p>생활에 맞춘 카테고리로 체계적인 관리</p></div><button class="text-btn" data-tab="settings">설정 ${ico('chevron',16)}</button></div>
-     <div class="category-preview-list">${expenseCats.map(c=>\`<span class="category-preview-item"><b>${esc(c.icon||'🏷️')}</b><em>${esc(c.name)}</em></span>\`).join('')}</div>
+     <div class="category-preview-list">${expenseCats.map(c=>`<span class="category-preview-item"><b>${esc(c.icon||'🏷️')}</b><em>${esc(c.name)}</em></span>`).join('')}</div>
      <p class="category-preview-foot">기본 카테고리 + 사용자 정의 분류를 함께 사용할 수 있어요.</p>
    </section>
  </div>
- ${!state.transactions.length?\`<div class="starter-banner"><div><strong>쉽고 편한 가계부를 먼저 둘러보세요</strong><p>샘플 데이터로 디자인과 기능을 확인한 뒤 내 기록을 시작할 수 있습니다.</p></div>${btn('샘플 데이터 둘러보기','load-demo','','btn btn-secondary')}</div>\`:''}\`;
+ ${!state.transactions.length?`<div class="starter-banner"><div><strong>쉽고 편한 가계부를 먼저 둘러보세요</strong><p>샘플 데이터로 디자인과 기능을 확인한 뒤 내 기록을 시작할 수 있습니다.</p></div>${btn('샘플 데이터 둘러보기','load-demo','','btn btn-secondary')}</div>`:''}`;
 }
 const isWithin=(d,p)=>d>=p.start&&d<p.end;
 const sortTx=(a,b)=>b.date.localeCompare(a.date)||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
