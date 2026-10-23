@@ -63,7 +63,7 @@ const iconPaths={
  spark:'<path d="m12 2 2 7 7 3-7 2-2 8-2-8-8-2 8-3z"/>'
 };
 function ico(n,size=20){return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[n]||iconPaths.info}</svg>`;}
-const NAV=[['home','홈','home'],['transactions','내역·정리함','receipt'],['calendar','달력','calendar'],['analytics','분석','chart'],['accounts','자산','wallet'],['settings','설정','settings']];
+const NAV=[['home','홈','home'],['transactions','내역·정리함','receipt'],['calendar','달력','calendar'],['analytics','통계 · 분석','chart'],['accounts','자산','wallet'],['settings','설정','settings']];
 function currentSummary(){return getSummary(state,ui.month);}
 const pendingCount=()=>state.transactions.filter(t=>t.status==='pending').length;
 const acc=(accountId)=>state.accounts.find(a=>a.id===accountId);
@@ -135,36 +135,75 @@ function transactionRow(t,compact=false){
 }
 function renderHome(){const s=currentSummary(),total=Math.max(1,s.budget),ratio=Math.max(0,Math.min(100,s.expense/total*100));
  const ordered=state.transactions.filter(t=>isWithin(t.date,s.period)).sort(sortTx);const pending=state.transactions.filter(t=>t.status==='pending').sort(sortTx);
- const top=Object.entries(s.byCategory).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
- return `${topBar('오늘의 지출이, 내일의 여유가 됩니다','쉽게 기록하고, 한눈에 보고, 꾸준히 관리해 보세요.',true,btn(`${ico('plus',17)} 기록 추가`,'add-transaction'))}
+ const top=Object.entries(s.byCategory).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,6);
+ const loggedDays=new Set(ordered.filter(t=>t.status==='confirmed').map(t=>t.date)).size;
+ const expenseCats=state.categories.filter(c=>c.type==='expense').slice(0,7);
+ const daily=s.expense/Math.max(1,loggedDays||1);
+ return \`${topBar('오늘의 지출이 내일의 여유가 됩니다','지금 가계부로 똑똑한 소비 습관을 시작하세요! 작은 기록이 더 나은 내일을 만듭니다 :)',true,btn(\`${ico('plus',17)} 기록 추가\`,'add-transaction'))}
  ${!authUser&&cloud.isConfigured()?'<div class="account-prompt">여러 기기에서 기록을 쓰고 싶으신가요? <button data-tab="settings">로그인·동기화 설정 →</button></div>':''}
- <section class="hero-panel">
+ <section class="hero-panel stitch-hero">
    <div class="hero-content">
-     <div class="eyebrow light">이번 달 나의 소비</div>
+     <div class="hero-pills"><span>${esc(s.period.label)} 월간 결산</span><em>똑똑한 소비 생활 · ${loggedDays}일 기록</em></div>
+     <div class="hero-expense-label">이번 기간 총 지출</div>
      <div class="hero-total">${m(s.expense)}</div>
-     <p>수입 <strong>${m(s.income)}</strong><span class="hero-dot">•</span> 남은 예산 <strong>${m(s.remaining)}</strong></p>
+     <div class="hero-mini-row">
+       <span>수입 <strong>${m(s.income)}</strong></span>
+       <span>남은 예산 <strong>${m(s.remaining)}</strong></span>
+       <span class="hero-daily">일평균 ${m(Math.round(daily))}</span>
+     </div>
      <div class="hero-actions">
-       <button class="hero-action primary" data-action="add-transaction">${ico('plus',16)} 지출 기록하기</button>
-       <button class="hero-action" data-tab="analytics">소비 분석 ${ico('arrowright',16)}</button>
+       <button class="hero-action primary" data-tab="transactions">지출 내역 전체보기 ${ico('arrowright',16)}</button>
+       <button class="hero-action" data-tab="analytics">소비 분석 ${ico('chart',16)}</button>
      </div>
    </div>
-   <div class="hero-mascot" aria-hidden="true">
-      <div class="hero-coin">₩</div>
-      <img src="./icons/icon.svg" alt="" />
-      <div class="hero-bubble">오늘도 차곡차곡 ✨</div>
+   <div class="hero-mascot stitch-mascot" aria-hidden="true">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGzho8Y05S2G-l4bpRqJJfFa5ISEfXFOdLxvTizeG4y3ZWjeyMStILtLXcejn4BsqG1-1-O-jh5_EpHAmsXxzuPFF6htujTUBptmi0D1lto4vR2QQiJKLjCcohF9aNG_tqqABbCzNzlbGqKOQNP7r6rpv-ew9ODM-bu8T58sMrgFvPxlGQmvxWTG4v8fqielwopHlQtQMJ_YZ9JxsA7c8_-KOttEQLGZDmcB4nkCg8jjKcmDVODGEIYpi6nstz-a6NKnw" alt="" />
    </div>
  </section>
- <section class="summary-grid">
-   <div class="metric-card income"><span class="metric-icon positive">${ico('arrowup',18)}</span><div><div class="metric-label">월 수입</div><div class="metric-value">${m(s.income)}</div><p>이번 정산기간 들어온 돈</p></div></div>
-   <div class="metric-card expense"><span class="metric-icon negative">${ico('arrowdown',18)}</span><div><div class="metric-label">월 지출</div><div class="metric-value">${m(s.expense)}</div><p>환불 금액 반영</p></div></div>
-   <div class="metric-card budget"><span class="metric-icon violet">${ico('wallet',18)}</span><div><div class="metric-label">남은 예산</div><div class="metric-value ${s.remaining<0?'negative':''}">${m(s.remaining)}</div><div class="mini-progress"><i style="width:${ratio}%"></i></div></div></div>
+ <section class="summary-grid stitch-kpis">
+   <div class="metric-card income">
+     <div class="metric-head"><span class="metric-dot blue"></span><span class="metric-label">수입</span><span class="metric-icon positive">${ico('arrowup',18)}</span></div>
+     <div class="metric-value income-value">${m(s.income)}</div><p>이번 정산기간 들어온 돈</p>
+   </div>
+   <div class="metric-card expense">
+     <div class="metric-head"><span class="metric-dot pink"></span><span class="metric-label">지출</span><span class="metric-icon negative">${ico('arrowdown',18)}</span></div>
+     <div class="metric-value expense-value">${m(s.expense)}</div><p>예산의 ${Math.round(ratio*10)/10}% 사용 · 환불 반영</p>
+   </div>
+   <div class="metric-card budget">
+     <div class="metric-head"><span class="metric-dot gold"></span><span class="metric-label">잔액 (예산 잔여)</span><span class="metric-icon violet">${ico('wallet',18)}</span></div>
+     <div class="metric-value budget-value ${s.remaining<0?'negative':''}">${m(s.remaining)}</div>
+     <div class="metric-budget-foot"><span>총예산 ${m(s.budget)}</span><strong>${s.remaining>=0?'여유 잔액 충분 🎉':'예산 초과 확인 필요'}</strong></div>
+     <div class="mini-progress"><i style="width:${Math.min(100,ratio)}%"></i></div>
+   </div>
  </section>
- ${pending.length?`<section class="attention-card"><div class="attention-icon">${ico('clock',24)}</div><div><h3>확인할 거래가 ${pending.length}건 있어요</h3><p>검토 전 기록은 지출과 자산 잔액에 포함되지 않아요.</p></div><button data-action="view-pending" class="btn btn-light">정리하기 ${ico('arrowright',16)}</button></section>`:''}
- <div class="home-columns">
-   <section class="panel transactions-panel"><div class="section-heading"><div><span class="section-kicker">RECENT</span><h2>최근 거래</h2><p>최근의 입출금 내역</p></div><button class="text-btn" data-tab="transactions">전체 보기 ${ico('chevron',16)}</button></div>${recentList(ordered,6)}</section>
-   <section class="panel insight-panel"><div class="section-heading"><div><span class="section-kicker">INSIGHT</span><h2>이번 달 지출 구성</h2><p>어디에 가장 많이 썼을까요?</p></div><button class="text-btn" data-tab="analytics">분석 보기 ${ico('chevron',16)}</button></div>${renderDonut(s,top)}<div class="quick-card mascot-tip"><span>🐷</span><div><strong>작은 기록이 큰 변화를 만들어요</strong><p>하루 1분, 잊기 전에 소비를 남겨보세요.</p></div></div></section>
+ ${pending.length?\`<section class="attention-card"><div class="attention-icon">${ico('clock',24)}</div><div><h3>확인할 거래가 ${pending.length}건 있어요</h3><p>검토 전 기록은 지출과 자산 잔액에 포함되지 않아요.</p></div><button data-action="view-pending" class="btn btn-light">정리하기 ${ico('arrowright',16)}</button></section>\`:''}
+ <div class="home-columns stitch-split">
+   <section class="panel transactions-panel">
+     <div class="section-heading stitch-section-heading"><div><h2>최근 지출 내역</h2><p>복잡한 설정 없이 간편하게 기록하세요.</p></div><button class="text-btn" data-tab="transactions">전체 보기 ${ico('chevron',16)}</button></div>
+     <div class="home-filter-pills"><span class="active">전체</span><span>지출</span><span>수입</span><span>이체</span></div>
+     ${recentList(ordered,7)}
+     <button class="quick-add-row" data-action="add-transaction">${ico('plus',18)} <span>새로운 거래 내역 바로 추가하기</span></button>
+   </section>
+   <section class="panel insight-panel">
+     <div class="section-heading stitch-section-heading"><div><h2>한눈에 보는 지출 분석</h2><p>차트로 확인하는 나의 소비 패턴</p></div><button class="text-btn" data-tab="analytics">통계 보기 ${ico('chevron',16)}</button></div>
+     ${renderDonut(s,top)}
+     <div class="quick-card mascot-tip"><span>🐷</span><div><strong>지금 쓰는 기록이 더 나은 내일을 만듭니다 :)</strong><p>작은 변화도 꾸준히 기록하면 소비 패턴이 더 선명해져요.</p></div></div>
+   </section>
  </div>
- ${!state.transactions.length?`<div class="starter-banner"><div><strong>가계부가 처음이라면</strong><p>샘플 데이터로 화면을 둘러보고 내 기록을 시작해 보세요.</p></div>${btn('샘플 데이터로 둘러보기','load-demo','','btn btn-secondary')}</div>`:''}`;
+ <div class="stitch-secondary-grid">
+   <section class="panel habit-panel">
+     <div class="section-heading stitch-section-heading"><div><h2>꾸준히 기록하는 습관 만들기</h2><p>작은 기록이 큰 변화를 만듭니다.</p></div><span class="habit-badge">${loggedDays}일 기록</span></div>
+     <div class="habit-days">${Array.from({length:7},(_,i)=>\`<span class="${i<Math.min(7,loggedDays)?'done':''}">${['월','화','수','목','금','토','일'][i]}</span>\`).join('')}</div>
+     <div class="habit-note">${loggedDays?'이번 기간에도 차곡차곡 기록하고 있어요 ✨':'오늘 첫 기록을 남겨보세요 🐷'}</div>
+     <button class="text-btn habit-link" data-tab="calendar">달력 전체보기 ${ico('chevron',16)}</button>
+   </section>
+   <section class="panel category-preview">
+     <div class="section-heading stitch-section-heading"><div><h2>다양한 카테고리로 더 깔끔하게</h2><p>생활에 맞춘 카테고리로 체계적인 관리</p></div><button class="text-btn" data-tab="settings">설정 ${ico('chevron',16)}</button></div>
+     <div class="category-preview-list">${expenseCats.map(c=>\`<span class="category-preview-item"><b>${esc(c.icon||'🏷️')}</b><em>${esc(c.name)}</em></span>\`).join('')}</div>
+     <p class="category-preview-foot">기본 카테고리 + 사용자 정의 분류를 함께 사용할 수 있어요.</p>
+   </section>
+ </div>
+ ${!state.transactions.length?\`<div class="starter-banner"><div><strong>쉽고 편한 가계부를 먼저 둘러보세요</strong><p>샘플 데이터로 디자인과 기능을 확인한 뒤 내 기록을 시작할 수 있습니다.</p></div>${btn('샘플 데이터 둘러보기','load-demo','','btn btn-secondary')}</div>\`:''}\`;
 }
 const isWithin=(d,p)=>d>=p.start&&d<p.end;
 const sortTx=(a,b)=>b.date.localeCompare(a.date)||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
