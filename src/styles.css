@@ -394,3 +394,119 @@ small{font-size:12px}
 @media(min-width:701px){.social-login-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
+
+
+/* 2026-10-23 Household Budget App Redesign · pastel piggy-bank brand */
+:root{
+ --bg:#fff8f7;--surface:#fff;--surface2:#fff3f4;--text:#292935;--muted:#8f8992;
+ --border:#f3e3e5;--primary:#ff637e;--primary2:#ff8b78;--primary-soft:#fff0f3;
+ --strong:#312a31;--shadow:0 12px 34px rgba(122,68,82,.08);--danger:#ef6172;
+ --green:#26a979;--purple:#8c72d7;--radius:26px;
+}
+:root[data-theme="dark"]{
+ --bg:#21191d;--surface:#2b2227;--surface2:#35282f;--text:#fff6f7;--muted:#cbb7bd;
+ --border:#4c3941;--primary:#ff8298;--primary2:#ffa18f;--primary-soft:#4a2b35;
+ --strong:#fff9fa;--shadow:0 14px 38px #0004;--danger:#ff8b9a;--green:#66d3a8;--purple:#bca7ff;
+}
+body{background:
+ radial-gradient(circle at 15% 5%,rgba(255,197,205,.24),transparent 28%),
+ radial-gradient(circle at 88% 8%,rgba(255,222,182,.22),transparent 26%),
+ var(--bg);}
+.sidebar{background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-right:1px solid #f5e2e5;padding-top:28px}
+.brand{padding-bottom:28px}
+.brand-symbol{overflow:hidden;background:transparent;box-shadow:0 9px 24px rgba(255,99,126,.22);border-radius:16px}
+.brand-symbol img{width:100%;height:100%;display:block}
+.brand-title{font-weight:900;color:#2f2930}
+.brand-sub{color:#a18a92}
+.sidebar-label{color:#c4a7ae}
+.nav-link{border-radius:16px;padding:13px 15px}
+.nav-link:hover{background:#fff5f6;color:#4a3840}
+.nav-link.active{background:linear-gradient(135deg,#fff0f3,#fff7f0);color:#ec5872;box-shadow:inset 0 0 0 1px #ffe0e6}
+.nav-counter{background:#ff7d83}
+.side-peek{background:linear-gradient(145deg,#fff7f8,#fffaf4);border-color:#f7e1e5}
+.sidebar-account-btn{border-color:#f1dfe3;background:#fff;color:#d94e68}
+.main-content{max-width:1460px}
+.page-head h1{font-weight:900;color:#292935;letter-spacing:-1.8px}
+.eyebrow{color:#ff637e}
+.btn-primary,.btn{background:linear-gradient(135deg,#ff637e,#ff8b78);box-shadow:0 8px 20px rgba(255,99,126,.20)}
+.btn-secondary{background:#fff0f3;color:#e85570;box-shadow:none}
+.btn-ghost{background:#fff;border-color:#f0e0e3}
+.period-nav{border-color:#f0e0e3;box-shadow:0 6px 18px rgba(122,68,82,.05)}
+.hero-panel{
+ min-height:278px;height:auto;padding:38px 42px;background:
+ radial-gradient(circle at 82% 24%,rgba(255,255,255,.9),rgba(255,255,255,.28) 26%,transparent 27%),
+ linear-gradient(120deg,#fff1f4 0%,#fff7f2 46%,#ffe6df 100%);
+ color:#2e2930;border:1px solid #f6d9df;box-shadow:0 18px 45px rgba(169,83,101,.11);
+}
+.eyebrow.light{color:#ee6079;font-weight:850;letter-spacing:.4px}
+.hero-total{font-size:48px;color:#2b2930}
+.hero-content p{color:#8b7b81;font-size:13px}
+.hero-content p strong{color:#463940}
+.hero-dot{display:inline-block;margin:0 8px;color:#e5a8b3}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.hero-action{margin-top:0;background:#fff;border:1px solid #f5d5db;color:#dd5a71;box-shadow:0 6px 16px rgba(122,68,82,.06)}
+.hero-action.primary{background:linear-gradient(135deg,#ff637e,#ff8b78);color:white;border-color:transparent;box-shadow:0 9px 22px rgba(255,99,126,.20)}
+.hero-mascot{position:absolute;right:40px;top:18px;width:280px;height:240px;display:grid;place-items:center}
+.hero-mascot img{width:190px;height:190px;filter:drop-shadow(0 18px 24px rgba(173,83,101,.16))}
+.hero-coin{position:absolute;right:18px;top:7px;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#ffd95d,#f2aa1c);border:6px solid #ffc846;color:#9b6000;font-weight:900;font-size:22px;transform:rotate(8deg);box-shadow:0 10px 18px rgba(183,121,16,.18)}
+.hero-bubble{position:absolute;right:12px;bottom:12px;background:#fff;border:1px solid #f3dce0;border-radius:18px;padding:10px 14px;color:#7f6870;font-weight:780;font-size:11px;box-shadow:0 8px 20px rgba(122,68,82,.08)}
+.hero-decor{display:none}
+.summary-grid{gap:18px}
+.metric-card{display:flex;align-items:center;gap:16px;padding:21px 22px;border:0;box-shadow:0 12px 28px rgba(91,63,72,.06)}
+.metric-card.income{background:linear-gradient(145deg,#eff9ff,#f8fcff)}
+.metric-card.expense{background:linear-gradient(145deg,#fff0f2,#fff8f8)}
+.metric-card.budget{background:linear-gradient(145deg,#f3f0ff,#faf9ff)}
+.metric-icon{margin:0;width:46px;height:46px;border-radius:15px}
+.metric-icon.positive{background:#dff3ff;color:#2786bb}
+.metric-icon.negative{background:#ffe1e6;color:#e65f75}
+.metric-icon.violet{background:#ebe4ff;color:#8062ce}
+.metric-label{font-size:12px}
+.metric-value{font-size:24px;margin-top:4px}
+.metric-card p{margin-top:5px}
+.mini-progress{height:7px;background:#e6def7}
+.mini-progress i{background:linear-gradient(90deg,#9a7ce0,#c8a9ee)}
+.panel{border:1px solid #f2e4e6;border-radius:22px;box-shadow:0 12px 32px rgba(96,63,72,.055)}
+.section-kicker{display:inline-flex;font-size:9px;letter-spacing:1.5px;color:#f1768a;font-weight:900;margin-bottom:5px}
+.transaction-icon{border-radius:14px}
+.transaction-row{border-color:#f2e7e9}
+.transaction-amount.negative{color:#ed6175}
+.transaction-amount.positive{color:#28a27c}
+.donut-center{box-shadow:0 4px 18px rgba(122,68,82,.06)}
+.quick-card.mascot-tip{border:0;background:linear-gradient(135deg,#fff1f4,#fff8ef);padding:15px 16px}
+.quick-card.mascot-tip>span{font-size:28px}
+.attention-card{background:linear-gradient(135deg,#fff9e8,#fff5ef);border-color:#f8dfc7}
+.starter-banner{background:linear-gradient(135deg,#fff0f3,#fff8ed)}
+.mobile-header{background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-bottom-color:#f2e1e4}
+.mobile-nav{background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-top-color:#f2e1e4;box-shadow:0 -8px 28px rgba(104,67,78,.08)}
+.mobile-nav .nav-link.active{background:transparent;box-shadow:none;color:#f15c76}
+.mobile-nav .nav-link.active svg{background:#ffeef2;border-radius:12px;padding:5px;width:30px;height:30px}
+.account-prompt{border-color:#f1dfe3;background:#fffafa}
+.form-stacked input:focus,.form-stacked textarea:focus,.form-stacked select:focus{border-color:#ff8298;box-shadow:0 0 0 3px rgba(255,99,126,.10)}
+.toast{background:#544048}
+@media(max-width:830px){
+ .brand-symbol img{width:100%;height:100%}
+ .hero-panel{min-height:245px;padding:30px 25px}
+ .hero-mascot{right:15px;width:210px;height:210px;opacity:.92}
+ .hero-mascot img{width:150px;height:150px}
+ .hero-bubble{display:none}
+ .hero-coin{width:48px;height:48px;font-size:18px;right:8px}
+ .hero-content{max-width:62%}
+}
+@media(max-width:560px){
+ .main-content{padding-top:20px}
+ .page-head h1{font-size:25px}
+ .hero-panel{min-height:226px;padding:25px 20px;border-radius:22px}
+ .hero-total{font-size:32px;letter-spacing:-1.4px}
+ .hero-content{max-width:68%}
+ .hero-content p{font-size:10px;line-height:1.6}
+ .hero-actions{gap:7px;margin-top:17px}
+ .hero-action{padding:9px 10px;font-size:10px}
+ .hero-mascot{right:-4px;top:17px;width:155px;height:175px}
+ .hero-mascot img{width:125px;height:125px}
+ .hero-coin{right:0;top:0;width:42px;height:42px;border-width:4px;font-size:16px}
+ .summary-grid{grid-template-columns:1fr;gap:9px}
+ .metric-card{padding:14px 15px;border-radius:16px}
+ .metric-icon{width:38px;height:38px}
+ .metric-value{font-size:18px}
+ .metric-card p{font-size:10px}
+}
