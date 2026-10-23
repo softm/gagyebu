@@ -60,9 +60,70 @@ const iconPaths={
  info:'<circle cx="12" cy="12" r="10"/><path d="M12 10v6M12 7h.01"/>',
  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1"/><path d="m3 17 6-6 4 4 3-3 5 5"/>',
- spark:'<path d="m12 2 2 7 7 3-7 2-2 8-2-8-8-2 8-3z"/>'
+ spark:'<path d="m12 2 2 7 7 3-7 2-2 8-2-8-8-2 8-3z"/>',
+ utensils:'<path d="M7 3v7M4 3v4a3 3 0 0 0 6 0V3M7 10v11M16 3v18M16 3c3 1 4 4 4 7h-4"/>',
+ coffee:'<path d="M5 8h11v6a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2M8 3v2M12 3v2"/>',
+ cart:'<circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M3 4h2l2.4 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H7"/>',
+ train:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M8 7h8M8 12h.01M16 12h.01M8 17l-2 4M16 17l2 4M8 21h8"/>',
+ house:'<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/>',
+ bag:'<path d="M5 8h14l-1 13H6z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/>',
+ heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/><path d="M8.5 12h2l1-2.2 2 4.5 1-2.3h2"/>',
+ film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/>',
+ box:'<path d="m4 7 8-4 8 4-8 4z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/>',
+ briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/>',
+ tag:'<path d="M20 13 13 20l-9-9V4h7z"/><circle cx="8.5" cy="8.5" r="1.2"/>',
+ bank:'<path d="m3 9 9-6 9 6"/><path d="M5 10h14M6 10v8M10 10v8M14 10v8M18 10v8M4 18h16M3 21h18"/>',
+ cash:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9H6a2 2 0 0 1-2-2M17 15h1a2 2 0 0 1 2 2"/>',
+ card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/>',
+ refund:'<path d="M9 7H5v-4M5 7a8 8 0 1 1-1 8"/><path d="M9 12h6"/>',
+ transfer:'<path d="M7 7h12l-3-3m3 3-3 3M17 17H5l3 3m-3-3 3-3"/>'
+
 };
 function ico(n,size=20){return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[n]||iconPaths.info}</svg>`;}
+const CATEGORY_VISUALS={
+ food:{icon:'utensils',tone:'food'},cafe:{icon:'coffee',tone:'cafe'},grocery:{icon:'cart',tone:'grocery'},
+ transport:{icon:'train',tone:'transport'},living:{icon:'house',tone:'living'},shopping:{icon:'bag',tone:'shopping'},
+ health:{icon:'heart',tone:'health'},leisure:{icon:'film',tone:'leisure'},bill:{icon:'receipt',tone:'bill'},
+ 'other-expense':{icon:'box',tone:'other'},salary:{icon:'briefcase',tone:'salary'},side:{icon:'spark',tone:'side'},
+ 'other-income':{icon:'wallet',tone:'income'}
+};
+function categoryVisual(catOrId){
+ const c=typeof catOrId==='string'?category(catOrId):catOrId;
+ if(!c)return {icon:'tag',tone:'other'};
+ const byId=CATEGORY_VISUALS[c.id];if(byId)return byId;
+ const n=String(c.name||'').toLowerCase();
+ if(/카페|커피|간식/.test(n))return CATEGORY_VISUALS.cafe;
+ if(/장보|마트|식자재/.test(n))return CATEGORY_VISUALS.grocery;
+ if(/교통|버스|지하철|주유|택시/.test(n))return CATEGORY_VISUALS.transport;
+ if(/식비|외식|음식/.test(n))return CATEGORY_VISUALS.food;
+ if(/의료|건강|병원|약/.test(n))return CATEGORY_VISUALS.health;
+ if(/쇼핑|의류|미용/.test(n))return CATEGORY_VISUALS.shopping;
+ if(/문화|여가|영화|여행/.test(n))return CATEGORY_VISUALS.leisure;
+ if(/공과금|통신|관리비/.test(n))return CATEGORY_VISUALS.bill;
+ if(/생활|주거/.test(n))return CATEGORY_VISUALS.living;
+ return c.type==='income'?{icon:'wallet',tone:'income'}:{icon:'tag',tone:'other'};
+}
+function categoryIcon(catOrId,size=19,extra=''){
+ const v=categoryVisual(catOrId);
+ return `<span class="category-icon-badge tone-${v.tone} ${extra}" aria-hidden="true">${ico(v.icon,size)}</span>`;
+}
+function transactionVisual(t){
+ if(t.kind==='expense')return categoryVisual(category(t.categoryId));
+ if(t.kind==='income')return {icon:'arrowdown',tone:'income'};
+ if(t.kind==='refund')return {icon:'refund',tone:'refund'};
+ if(t.kind==='transfer')return {icon:'transfer',tone:'transfer'};
+ if(t.kind==='repayment')return {icon:'card',tone:'repayment'};
+ return {icon:'receipt',tone:'other'};
+}
+function transactionIcon(t){
+ const v=transactionVisual(t);
+ return `<span class="transaction-icon category-icon-badge tone-${v.tone}" aria-hidden="true">${ico(v.icon,19)}</span>`;
+}
+function accountIcon(kind){
+ const v=kind==='card'?{icon:'card',tone:'shopping'}:kind==='cash'?{icon:'cash',tone:'salary'}:{icon:'bank',tone:'transport'};
+ return `<span class="account-symbol ${kind} category-icon-badge tone-${v.tone}" aria-hidden="true">${ico(v.icon,21)}</span>`;
+}
+
 const NAV=[['home','홈','home'],['transactions','내역·정리함','receipt'],['calendar','달력','calendar'],['analytics','통계 · 분석','chart'],['accounts','자산','wallet'],['settings','설정','settings']];
 function currentSummary(){return getSummary(state,ui.month);}
 const pendingCount=()=>state.transactions.filter(t=>t.status==='pending').length;
@@ -129,7 +190,7 @@ function transactionRow(t,compact=false){
  const dup=t.status==='pending'?duplicateOf(t,state.transactions):null;
  const to=t.toAccountId?` → ${acc(t.toAccountId)?.name||'미지정'}`:'';
  return `<div class="transaction-row ${t.status==='pending'?'row-pending':''}">
- <div class="transaction-icon" style="--icon-bg:${badge==='negative'?'#fff0e8':badge==='positive'?'#e8f6ef':'#eef2f6'}">${t.kind==='expense'?(cat?.icon||'🧾'):t.kind==='income'?'↗':t.kind==='refund'?'↺':t.kind==='repayment'?'💳':'⇄'}</div>
+ ${transactionIcon(t)}
  <div class="transaction-info"><div class="transaction-name">${esc(t.title)}${t.status==='pending'?`<span class="pill warning">확인 필요</span>`:''}${dup?`<span class="pill danger">중복 의심</span>`:''}${t.attachment||t.attachmentPath?`<span title="사진 첨부">${ico('image',14)}</span>`:''}</div><p>${dateFmt(t.date)} · ${esc(acc(t.accountId)?.name||'계정 미지정')}${esc(to)} · ${esc(cat?.name||kindLabel(t.kind))}</p></div>
  <div class="transaction-tail"><div class="transaction-amount ${badge}">${sign}${m(t.amount)}</div>${compact?'':`<div class="row-actions">${t.status==='pending'?`<button data-action="confirm-transaction" data-id="${esc(t.id)}" title="확정" aria-label="확정">${ico('check',16)}</button>`:''}<button data-action="edit-transaction" data-id="${esc(t.id)}" title="수정" aria-label="수정">${ico('edit',16)}</button>${t.kind==='expense'&&t.status==='confirmed'?`<button data-action="refund-transaction" data-id="${esc(t.id)}" title="환불 등록" aria-label="환불 등록">${ico('repeat',16)}</button>`:''}<button data-action="delete-transaction" data-id="${esc(t.id)}" title="삭제" aria-label="삭제">${ico('trash',16)}</button></div>`}</div></div>`;
 }
@@ -199,7 +260,7 @@ function renderHome(){const s=currentSummary(),total=Math.max(1,s.budget),ratio=
    </section>
    <section class="panel category-preview">
      <div class="section-heading stitch-section-heading"><div><h2>다양한 카테고리로 더 깔끔하게</h2><p>생활에 맞춘 카테고리로 체계적인 관리</p></div><button class="text-btn" data-tab="settings">설정 ${ico('chevron',16)}</button></div>
-     <div class="category-preview-list">${expenseCats.map(c=>`<span class="category-preview-item"><b>${esc(c.icon||'🏷️')}</b><em>${esc(c.name)}</em></span>`).join('')}</div>
+     <div class="category-preview-list">${expenseCats.map(c=>`<span class="category-preview-item">${categoryIcon(c,20,'category-preview-icon')}<em>${esc(c.name)}</em></span>`).join('')}</div>
      <p class="category-preview-foot">기본 카테고리 + 사용자 정의 분류를 함께 사용할 수 있어요.</p>
    </section>
  </div>
@@ -242,18 +303,18 @@ function renderAnalytics(){const s=currentSummary();const byCat=Object.entries(s
  return `${topBar('소비 분석','숫자를 통해 내 지출 습관을 발견해 보세요.',true,btn(`${ico('download',17)} CSV 내보내기`,'export-csv','','btn btn-secondary'))}
  <section class="summary-grid analytic"><div class="metric-card"><span class="metric-label">기간 수입</span><div class="metric-value">${m(s.income)}</div><p>실제로 들어온 돈</p></div><div class="metric-card"><span class="metric-label">순지출</span><div class="metric-value">${m(s.expense)}</div><p>환불 반영 · 이체/상환 제외</p></div><div class="metric-card"><span class="metric-label">남은 예산</span><div class="metric-value">${m(s.remaining)}</div><p>설정한 총예산 ${m(s.budget)}</p></div></section>
  <div class="analytics-grid"><section class="panel"><div class="section-heading"><div><h2>카테고리별 지출</h2><p>무엇에 가장 많이 썼을까요?</p></div></div>${renderDonut(s,byCat.slice(0,7))}</section><section class="panel"><div class="section-heading"><div><h2>최근 6개 기간 소비</h2><p>설정된 정산 시작일 기준</p></div></div><div class="bar-chart">${trend.map(x=>`<div class="bar-item"><strong>${compactMoney(x.expense)}</strong><div class="bar-track"><div class="bar-fill" style="height:${Math.max(3,100*x.expense/maxTrend)}%"></div></div><small>${Number(x.key.slice(-2))}월</small></div>`).join('')}</div></section></div>
- <section class="panel"><div class="section-heading"><div><h2>분류별 사용 금액</h2><p>카테고리 예산은 각 행의 편집 버튼으로 설정할 수 있어요.</p></div></div>${byCat.length?byCat.map(([cid,val],i)=>{const lim=state.budgets[cid]||0;return `<div class="category-meter"><div class="category-name"><span class="category-emoji">${esc(category(cid)?.icon||'📦')}</span><div><strong>${esc(category(cid)?.name||'기타')}</strong><small>${lim?`예산 ${m(lim)}`:'예산 미설정'}</small></div></div><div class="category-amount"><strong>${m(val)}</strong><button class="icon-btn small" data-action="budget-category" data-id="${esc(cid)}" aria-label="분류 예산 설정">${ico('edit',15)}</button></div><div class="category-bar"><i style="width:${Math.min(100,Math.round(val/(lim||max)*100))}%;background:${COLORS[i%COLORS.length]}"></i></div></div>`;}).join(''):empty('📈','분석할 거래가 없어요','지출 내역을 기록하면 비중과 추이가 나타납니다.')}</section>`;
+ <section class="panel"><div class="section-heading"><div><h2>분류별 사용 금액</h2><p>카테고리 예산은 각 행의 편집 버튼으로 설정할 수 있어요.</p></div></div>${byCat.length?byCat.map(([cid,val],i)=>{const lim=state.budgets[cid]||0;return `<div class="category-meter"><div class="category-name">${categoryIcon(category(cid),18,'category-meter-icon')}<div><strong>${esc(category(cid)?.name||'기타')}</strong><small>${lim?`예산 ${m(lim)}`:'예산 미설정'}</small></div></div><div class="category-amount"><strong>${m(val)}</strong><button class="icon-btn small" data-action="budget-category" data-id="${esc(cid)}" aria-label="분류 예산 설정">${ico('edit',15)}</button></div><div class="category-bar"><i style="width:${Math.min(100,Math.round(val/(lim||max)*100))}%;background:${COLORS[i%COLORS.length]}"></i></div></div>`;}).join(''):empty('📈','분석할 거래가 없어요','지출 내역을 기록하면 비중과 추이가 나타납니다.')}</section>`;
 }
 function renderAccounts(){const bal=getAccountBalances(state);const debt=state.accounts.filter(a=>a.kind==='card').reduce((sum,a)=>sum+(bal[a.id]||0),0);const liquid=state.accounts.filter(a=>a.kind!=='card').reduce((sum,a)=>sum+(bal[a.id]||0),0);
  return `${topBar('자산 관리','통장과 카드의 흐름을 나누어 확인하세요.',false,btn(`${ico('plus',17)} 자산 추가`,'add-account'))}
  <div class="asset-hero"><div><span>순자산 추정</span><h2>${m(liquid-debt)}</h2><small>현금·계좌 합계에서 카드 사용 잔액을 차감한 값입니다.</small></div><button data-action="new-transfer" class="btn btn-light">${ico('repeat',17)} 계좌 이체</button></div>
- <div class="account-section"><div class="section-heading"><div><h2>내 자산 ${state.accounts.length}개</h2><p>초기잔액과 확정된 거래를 반영합니다.</p></div></div><div class="account-grid">${state.accounts.map(a=>`<div class="account-card"><div class="account-top"><div class="account-symbol ${a.kind}">${a.kind==='card'?'💳':a.kind==='cash'?'💵':'🏦'}</div><button class="icon-btn" data-action="edit-account" data-id="${esc(a.id)}" aria-label="자산 편집">${ico('edit',18)}</button></div><div class="account-name">${esc(a.name)} <span class="pill">${a.kind==='card'?'카드 부채':a.kind==='cash'?'현금':'은행 계좌'}</span></div><strong class="account-balance">${m(bal[a.id]||0)}</strong><p>${a.kind==='card'?'사용잔액은 갚아야 할 금액입니다.':'잔액이 음수면 거래 내역을 확인하세요.'}</p></div>`).join('')}</div></div>
+ <div class="account-section"><div class="section-heading"><div><h2>내 자산 ${state.accounts.length}개</h2><p>초기잔액과 확정된 거래를 반영합니다.</p></div></div><div class="account-grid">${state.accounts.map(a=>`<div class="account-card"><div class="account-top">${accountIcon(a.kind)}<button class="icon-btn" data-action="edit-account" data-id="${esc(a.id)}" aria-label="자산 편집">${ico('edit',18)}</button></div><div class="account-name">${esc(a.name)} <span class="pill">${a.kind==='card'?'카드 부채':a.kind==='cash'?'현금':'은행 계좌'}</span></div><strong class="account-balance">${m(bal[a.id]||0)}</strong><p>${a.kind==='card'?'사용잔액은 갚아야 할 금액입니다.':'잔액이 음수면 거래 내역을 확인하세요.'}</p></div>`).join('')}</div></div>
  <section class="panel info-strip"><div>${ico('info',22)}</div><p><strong>카드대금은 지출로 중복 집계되지 않습니다.</strong><br/>신용카드 사용은 지출과 카드 부채를 늘리고, 카드상환은 은행 잔액과 카드 부채만 줄입니다.</p>${btn('상환 기록','new-repayment','','btn btn-secondary')}</section>`;
 }
 function renderSettings(){
  const s=state.settings;return `${topBar('설정','내 방식대로 가계부를 꾸미고, 기록을 직접 관리하세요.',false)}${renderAuthPanel()}<div class="settings-grid">
  <section class="panel"><div class="section-heading"><div><h2>예산과 정산기간</h2><p>예산과 월 시작일을 정해주세요.</p></div></div><form id="settingsForm" class="form-stacked"><label>월 예산 (원)<input name="monthlyBudget" inputmode="numeric" type="number" min="0" step="1" value="${s.monthlyBudget||0}" required /></label><label>정산 시작일<select name="periodStartDay">${Array.from({length:28},(_,i)=>i+1).map(v=>`<option value="${v}" ${v===Number(s.periodStartDay)?'selected':''}>매월 ${v}일</option>`).join('')}</select></label><label>화면 테마<select name="theme"><option value="light" ${s.theme!=='dark'?'selected':''}>라이트</option><option value="dark" ${s.theme==='dark'?'selected':''}>다크</option></select></label><button type="submit" class="btn btn-primary">설정 저장</button></form></section>
- <section class="panel"><div class="section-heading"><div><h2>나만의 분류</h2><p>거래 입력 시 선택할 수 있습니다.</p></div><button class="icon-btn" data-action="add-category" aria-label="카테고리 추가">${ico('plus',20)}</button></div><div class="category-settings">${state.categories.map(c=>`<div><span>${esc(c.icon)} ${esc(c.name)} <small>${c.type==='income'?'수입':'지출'}</small></span><button class="icon-btn small" data-action="edit-category" data-id="${esc(c.id)}" aria-label="분류 수정">${ico('edit',16)}</button></div>`).join('')}</div></section>
+ <section class="panel"><div class="section-heading"><div><h2>나만의 분류</h2><p>거래 입력 시 선택할 수 있습니다.</p></div><button class="icon-btn" data-action="add-category" aria-label="카테고리 추가">${ico('plus',20)}</button></div><div class="category-settings">${state.categories.map(c=>`<div><span class="category-setting-main">${categoryIcon(c,17,'category-setting-icon')}<span><strong>${esc(c.name)}</strong><small>${c.type==='income'?'수입':'지출'}</small></span></span><button class="icon-btn small" data-action="edit-category" data-id="${esc(c.id)}" aria-label="분류 수정">${ico('edit',16)}</button></div>`).join('')}</div></section>
  <section class="panel"><div class="section-heading"><div><h2>백업과 데이터 관리</h2><p>비로그인 장부는 브라우저에, 로그인 장부는 사용자별 Firestore와 기기 캐시에 보관됩니다.</p></div></div><div class="settings-actions">${btn(`${ico('download',17)} JSON 전체 백업`,'export-json','','btn btn-secondary')}${btn(`${ico('upload',17)} JSON 복원`,'import-json','','btn btn-secondary')}${btn(`${ico('download',17)} 거래 CSV`,'export-csv','','btn btn-secondary')}${btn(`${ico('upload',17)} CSV·문자 가져오기`,'open-import','','btn btn-secondary')}</div><div class="notice-box">${ico('alert',18)} ${activeUid?'로그인 장부는 Firestore에 저장되지만 동기화 완료 전에는 기기 기록을 지우지 마세요. 영수증은 Cloud Storage를 사용합니다.':'비로그인 기록은 이 브라우저에만 보관됩니다. 기기 변경 전 JSON 백업을 내려받으세요.'}</div><div class="data-stats">현재 거래 <strong>${state.transactions.length.toLocaleString()}건</strong> · 확인 필요 <strong>${pendingCount()}건</strong> · 자산 <strong>${state.accounts.length}개</strong></div><button class="text-danger" data-action="reset-all">${activeUid?'로그인 장부 전체 초기화':'로컬 장부 전체 초기화'}</button></section>
  <section class="panel"><div class="section-heading"><div><h2>서비스 정보</h2></div></div><p class="settings-about"><strong>가계부 · GAGYEBU</strong><br/>기록을 더 간단하게, 돈의 흐름은 더 선명하게.</p><p class="settings-about">버전 0.3.0 · 오프라인 우선 웹앱(PWA) · Google/카카오/네이버 로그인 · Firebase Auth/Firestore · 수동입력/CSV/문자 붙여넣기 · 금융기관 자동 조회는 제공하지 않습니다.</p><a href="https://github.com/softm/gagyebu" target="_blank" rel="noopener noreferrer" class="inline-link">GitHub 프로젝트 ${ico('arrowright',15)}</a><p class="settings-about"><a class="inline-link" href="./privacy.html" target="_blank" rel="noopener noreferrer">개인정보처리방침</a><br/>조회 화면에는 Kakao AdFit 광고가 표시될 수 있습니다. 하단 광고는 접을 수 있으며 거래 입력·자산·설정 화면에는 표시하지 않습니다.</p></section></div>`;
 }
@@ -261,7 +322,7 @@ function renderSettings(){
 function openModal(content,context={}){modalContext=context;$('#modalHost').innerHTML=`<div class="modal-backdrop" data-action="dismiss-modal"><div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(context.title||'상세 입력')}"><div class="dialog-head"><div><p class="eyebrow">GAGYEBU</p><h2>${esc(context.title||'입력')}</h2></div><button class="icon-btn" data-action="dismiss-modal" aria-label="닫기">${ico('close',22)}</button></div><div class="dialog-content">${content}</div></div></div>`;document.body.classList.add('modal-open');updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:true});setTimeout(()=>$('#modalHost input:not([type=hidden]),#modalHost select,#modalHost textarea')?.focus(),30);}
 function closeModal(){modalContext=null;$('#modalHost').innerHTML='';document.body.classList.remove('modal-open');updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:false});} // SOFTM-ADFIT 날짜:20261022 : 입력을 마친 뒤 사용자의 광고 접힘 상태로 복원
 const optionAccounts=(selected)=>state.accounts.map(a=>`<option value="${esc(a.id)}" ${a.id===selected?'selected':''}>${esc(a.name)}${a.kind==='card'?' · 카드':''}</option>`).join('');
-const optionCategories=(selected,type='expense')=>state.categories.filter(c=>c.type===type).map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.icon)} ${esc(c.name)}</option>`).join('');
+const optionCategories=(selected,type='expense')=>state.categories.filter(c=>c.type===type).map(c=>`<option value="${esc(c.id)}" ${c.id===selected?'selected':''}>${esc(c.name)}</option>`).join('');
 function openTransaction(t=null,preset={}){
  const kind=preset.kind||t?.kind||'expense';const dat=preset.date||t?.date||isoDate();const acId=preset.accountId||t?.accountId||'bank';const toId=preset.toAccountId||t?.toAccountId||(kind==='repayment'?'card':'cash');
  const val=preset.amount||t?.expression||t?.amount||'';const cat=preset.categoryId||t?.categoryId||suggestCategory(t?.title||'',kind);
@@ -311,8 +372,8 @@ async function saveAccount(ev){ev.preventDefault();const f=ev.target;const name=
  if(!name||!Number.isSafeInteger(openingBalance)){toast('이름과 정수 금액을 확인해주세요.','error');return;}
  const current=state.accounts.find(a=>a.id===oldId);if(current?.kind!==kind&&state.transactions.some(t=>t.accountId===oldId||t.toAccountId===oldId)){toast('거래가 있는 계좌의 유형은 변경할 수 없습니다.','error');return;}
  closeModal();await mutate(next=>{const i=next.accounts.findIndex(a=>a.id===oldId);const a={id:oldId||id(),name,kind,openingBalance};if(i<0)next.accounts.push(a);else next.accounts[i]=a;},'자산 정보를 저장했습니다.');}
-function openCategory(c=null){openModal(`<form id="categoryForm" class="form-stacked"><label>분류 이름<input name="name" maxlength="32" required value="${esc(c?.name||'')}" placeholder="예: 자동차"/></label><label>아이콘 (이모지)<input name="icon" maxlength="8" value="${esc(c?.icon||'🏷️')}"/></label><label>구분<select name="type"><option value="expense" ${c?.type!=='income'?'selected':''}>지출</option><option value="income" ${c?.type==='income'?'selected':''}>수입</option></select></label><div class="form-actions"><button class="btn btn-secondary" type="button" data-action="dismiss-modal">취소</button><button class="btn btn-primary" type="submit">저장</button></div></form>`,{title:c?'분류 수정':'새 분류',categoryId:c?.id||null});}
-async function saveCategory(e){e.preventDefault();const f=e.target;const name=f.elements.name.value.trim(),icon=f.elements.icon.value.trim()||'🏷️',type=f.elements.type.value,cid=modalContext?.categoryId;if(!name)return;
+function openCategory(c=null){openModal(`<form id="categoryForm" class="form-stacked"><label>분류 이름<input name="name" maxlength="32" required value="${esc(c?.name||'')}" placeholder="예: 자동차"/></label><label>분류 표시 기호 <input name="icon" maxlength="8" value="${esc(c?.icon||'')} " placeholder="선택 입력 · 화면 아이콘은 자동 통일"/></label><label>구분<select name="type"><option value="expense" ${c?.type!=='income'?'selected':''}>지출</option><option value="income" ${c?.type==='income'?'selected':''}>수입</option></select></label><div class="form-actions"><button class="btn btn-secondary" type="button" data-action="dismiss-modal">취소</button><button class="btn btn-primary" type="submit">저장</button></div></form>`,{title:c?'분류 수정':'새 분류',categoryId:c?.id||null});}
+async function saveCategory(e){e.preventDefault();const f=e.target;const name=f.elements.name.value.trim(),icon=f.elements.icon.value.trim()||'',type=f.elements.type.value,cid=modalContext?.categoryId;if(!name)return;
  if(cid){const prev=state.categories.find(c=>c.id===cid);if(prev?.type!==type&&state.transactions.some(t=>t.categoryId===cid)){toast('사용 중인 분류의 수입/지출 유형은 바꿀 수 없습니다.','error');return;}}
  closeModal();await mutate(next=>{const i=next.categories.findIndex(c=>c.id===cid);const cat={id:cid||id(),name,icon,type};if(i<0)next.categories.push(cat);else next.categories[i]=cat;},'분류를 저장했습니다.');}
 function openBudget(cid){const c=category(cid);openModal(`<form id="budgetForm" class="form-stacked"><p class="form-note">${esc(c?.name||'분류')}의 월별 예산 목표입니다. 총예산과 별도로 관리합니다.</p><label>월 예산 (원)<input name="amount" type="number" min="0" step="1" value="${state.budgets[cid]||0}" required/></label><div class="form-actions"><button class="btn btn-secondary" type="button" data-action="dismiss-modal">취소</button><button class="btn btn-primary" type="submit">적용</button></div></form>`,{title:'카테고리 예산',categoryId:cid});}
