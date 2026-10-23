@@ -662,3 +662,163 @@ h1,h2,h3,.brand-title,.hero-total,.metric-value,.transaction-name,.transaction-a
  .habit-days{gap:5px}
  .habit-days span{height:36px;border-radius:11px}
 }
+
+
+/* STITCH-DETAIL-PASS-20261023 */
+/* Category and financial icon system: one visual language across home, transactions, analytics, settings and assets. */
+.category-icon-badge{
+  --badge-bg:#F4F1F2;--badge-fg:#6B5D61;
+  width:40px;height:40px;min-width:40px;border-radius:14px;
+  display:inline-grid;place-items:center;
+  background:var(--badge-bg);color:var(--badge-fg);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.66),0 1px 3px rgba(43,26,30,.03);
+  vertical-align:middle;
+}
+.category-icon-badge .ico{width:19px;height:19px;stroke-width:1.85}
+.tone-food{--badge-bg:#FFE4E8;--badge-fg:#E23C52}
+.tone-cafe{--badge-bg:#FFEBD9;--badge-fg:#E67820}
+.tone-grocery{--badge-bg:#E2F8EE;--badge-fg:#16875E}
+.tone-transport{--badge-bg:#E3EFFF;--badge-fg:#2F6FDC}
+.tone-living{--badge-bg:#E8F7EE;--badge-fg:#258258}
+.tone-shopping{--badge-bg:#F0E9FF;--badge-fg:#7753C8}
+.tone-health{--badge-bg:#E0F8F5;--badge-fg:#0B8C7B}
+.tone-leisure{--badge-bg:#FCE8F3;--badge-fg:#C83C83}
+.tone-bill{--badge-bg:#FFF3D8;--badge-fg:#B77608}
+.tone-other{--badge-bg:#F0F2F5;--badge-fg:#667085}
+.tone-salary{--badge-bg:#E6EEFF;--badge-fg:#315FCC}
+.tone-side{--badge-bg:#FFF0D8;--badge-fg:#B96D08}
+.tone-income{--badge-bg:#DFF7F2;--badge-fg:#088170}
+.tone-refund{--badge-bg:#E1F8EC;--badge-fg:#138A59}
+.tone-transfer{--badge-bg:#EEF1F4;--badge-fg:#667085}
+.tone-repayment{--badge-bg:#F0E9FF;--badge-fg:#7753C8}
+
+/* Transaction rows */
+.transaction-icon.category-icon-badge{
+  width:42px;height:42px;min-width:42px;border-radius:15px;
+  background:var(--badge-bg)!important;color:var(--badge-fg)!important;font-size:0;
+}
+.transaction-row{gap:14px;padding:13px 4px}
+.transaction-info p{margin-top:4px;color:#88767B}
+.transaction-name{letter-spacing:-.01em}
+.transaction-tail{padding-left:8px}
+.transaction-amount{font-size:14px;letter-spacing:-.02em}
+.transaction-amount.negative{color:#ED536F}
+.transaction-amount.positive{color:#159A72}
+.row-pending{background:linear-gradient(90deg,rgba(255,247,231,.75),transparent);border-radius:14px;padding-left:8px;padding-right:8px}
+
+/* Home category preview */
+.category-preview-list{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.category-preview-item{
+  min-height:96px;padding:12px 7px 11px;border-radius:18px;
+  background:#FFFDFD;border:1px solid #F4E5E8;
+  justify-content:center;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.category-preview-item:hover{transform:translateY(-1px);border-color:#F0CCD4;box-shadow:0 7px 18px rgba(126,62,78,.06)}
+.category-preview-icon{width:42px;height:42px;min-width:42px;border-radius:15px}
+.category-preview-item em{font-size:11px;font-weight:750;line-height:1.25;color:#715F64}
+
+/* Analytics: legend and meters reuse exact category badges */
+.legend-category-icon{width:28px;height:28px;min-width:28px;border-radius:10px}
+.legend-category-icon .ico{width:14px;height:14px}
+.donut-legend>div{gap:9px;padding:5px 0}
+.donut-legend span:nth-child(2){font-weight:650;color:#726166}
+.donut-legend strong{font-family:'Epilogue','Manrope',sans-serif;font-weight:750}
+.category-meter{grid-template-columns:minmax(0,1fr) 160px;margin:17px 0;gap:9px 12px}
+.category-meter-icon{width:38px;height:38px;min-width:38px;border-radius:13px}
+.category-name{gap:11px}
+.category-name strong{font-family:'Epilogue','Manrope',sans-serif;font-size:13px;font-weight:750}
+.category-name small{margin-top:3px;font-size:10px}
+.category-bar{height:7px;background:#F8F0F2}
+.category-bar i{box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+
+/* Settings category rows */
+.category-settings{gap:6px;max-height:410px}
+.category-settings>div{
+  min-height:54px;padding:7px 8px;border:1px solid transparent;border-radius:14px;
+  transition:background .15s,border-color .15s;
+}
+.category-settings>div:hover{background:#FFF8F9;border-color:#F5E5E8}
+.category-setting-main{display:flex;align-items:center;gap:11px;min-width:0}
+.category-setting-main>span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.category-setting-main strong{font-size:12px;font-weight:780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.category-setting-main small{margin:0;font-size:10px}
+.category-setting-icon{width:34px;height:34px;min-width:34px;border-radius:12px}
+.category-setting-icon .ico{width:16px;height:16px}
+
+/* Account cards now match the same SVG/badge family. */
+.account-card{border-radius:22px;border-color:#F0E0E3;padding:22px 21px}
+.account-top{margin-bottom:15px}
+.account-symbol.category-icon-badge{width:46px;height:46px;min-width:46px;border-radius:16px;font-size:0;background:var(--badge-bg)!important;color:var(--badge-fg)!important}
+.account-symbol.category-icon-badge .ico{width:21px;height:21px}
+.account-balance{font-family:'Epilogue','Manrope',sans-serif;font-variant-numeric:tabular-nums;font-size:25px}
+.account-name .pill{border-radius:8px;padding:4px 7px}
+
+/* More exact Stitch component geometry. */
+.page-head{padding-top:1px}
+.page-head .head-right{gap:10px}
+.period-nav{padding:4px 5px;min-height:42px;box-shadow:none}
+.period-nav span{font-family:'Epilogue','Manrope',sans-serif;font-weight:750;min-width:100px}
+.icon-btn{border-radius:11px}
+.btn{min-height:42px;padding:10px 15px;font-size:13px;font-weight:800}
+.stitch-hero{isolation:isolate}
+.stitch-hero:before{
+  content:"";position:absolute;inset:-40% -10% auto auto;width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.18),rgba(255,255,255,0) 68%);z-index:0
+}
+.stitch-hero:after{
+  content:"";position:absolute;right:150px;bottom:-150px;width:310px;height:310px;border:1px solid rgba(255,255,255,.14);
+  border-radius:50%;z-index:0
+}
+.stitch-mascot{z-index:1}
+.stitch-mascot img{filter:saturate(.98) drop-shadow(0 16px 24px rgba(123,38,58,.13))}
+.stitch-kpis .metric-card{min-height:154px}
+.metric-head .metric-icon{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
+.metric-icon.positive{background:#E7F0FF;color:#2F6FDC}
+.metric-icon.negative{background:#FFE8ED;color:#E74E68}
+.metric-icon.violet{background:#FFF2D9;color:#B77608}
+.stitch-section-heading{margin-bottom:15px}
+.panel{overflow:hidden}
+.home-filter-pills{margin-bottom:8px}
+.quick-add-row{min-height:44px;transition:background .15s,border-color .15s,transform .15s}
+.quick-add-row:hover{background:#FFF1F4;border-color:#EFBCC7;transform:translateY(-1px)}
+.mascot-tip{min-height:66px}
+.habit-panel,.category-preview{min-height:210px}
+.habit-days span{border:1px solid #F5E7E9}
+.habit-days span.done{border-color:transparent}
+.habit-note{border:1px solid #FAE8CE}
+.starter-banner{border:1px solid #F1DCE1}
+.search-field,.filter-selects select,.form-stacked input:not([type=radio]),.form-stacked textarea,.form-stacked select,.form-grid input,.form-grid select{
+  border-radius:13px;border-color:#EBDCDF;background:#FFFBFC;
+}
+.filter-selects select{padding:7px 10px}
+.tabs{gap:5px}
+.tab{border-radius:13px;padding:9px 15px}
+.tab.active{background:#FFF0F3;border-color:#F4CCD5;box-shadow:none}
+.pill{border-radius:7px}
+
+/* Dark mode keeps category recognition without turning all badges neon. */
+:root[data-theme="dark"] .category-preview-item,
+:root[data-theme="dark"] .category-settings>div:hover{background:#33252A;border-color:#51373F}
+:root[data-theme="dark"] .category-icon-badge{filter:saturate(.8) brightness(.9)}
+:root[data-theme="dark"] .search-field,
+:root[data-theme="dark"] .filter-selects select,
+:root[data-theme="dark"] .form-stacked input:not([type=radio]),
+:root[data-theme="dark"] .form-stacked textarea,
+:root[data-theme="dark"] .form-stacked select,
+:root[data-theme="dark"] .form-grid input,
+:root[data-theme="dark"] .form-grid select{background:#33252A;border-color:#51373F}
+
+@media(max-width:830px){
+  .category-preview-list{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .category-preview-item{min-height:88px}
+  .category-preview-icon{width:38px;height:38px;min-width:38px}
+}
+@media(max-width:560px){
+  .category-preview-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .category-preview-item{min-height:84px;padding:10px 5px}
+  .category-preview-item em{font-size:10px}
+  .category-icon-badge{width:38px;height:38px;min-width:38px;border-radius:13px}
+  .transaction-icon.category-icon-badge{width:40px;height:40px;min-width:40px}
+  .category-meter{grid-template-columns:minmax(0,1fr) 112px}
+  .category-setting-main{gap:9px}
+}
