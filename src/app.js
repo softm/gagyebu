@@ -87,6 +87,11 @@ const CATEGORY_VISUALS={
  'other-expense':{icon:'box',tone:'other'},salary:{icon:'briefcase',tone:'salary'},side:{icon:'spark',tone:'side'},
  'other-income':{icon:'wallet',tone:'income'}
 };
+const CATEGORY_TONE_COLORS={
+ food:'#FF5252',cafe:'#FF8A34',grocery:'#10B981',transport:'#3B82F6',living:'#22A06B',
+ shopping:'#8B5CF6',health:'#14B8A6',leisure:'#EC4899',bill:'#F59E0B',other:'#94A3B8',
+ salary:'#2563EB',side:'#D97706',income:'#0EA5A4',refund:'#10B981',transfer:'#64748B',repayment:'#8B5CF6'
+};
 function categoryVisual(catOrId){
  const c=typeof catOrId==='string'?category(catOrId):catOrId;
  if(!c)return {icon:'tag',tone:'other'};
@@ -107,6 +112,7 @@ function categoryIcon(catOrId,size=19,extra=''){
  const v=categoryVisual(catOrId);
  return `<span class="category-icon-badge tone-${v.tone} ${extra}" aria-hidden="true">${ico(v.icon,size)}</span>`;
 }
+function categoryColor(catOrId){return CATEGORY_TONE_COLORS[categoryVisual(catOrId).tone]||CATEGORY_TONE_COLORS.other;}
 function transactionVisual(t){
  if(t.kind==='expense')return categoryVisual(category(t.categoryId));
  if(t.kind==='income')return {icon:'arrowdown',tone:'income'};
@@ -271,7 +277,7 @@ const sortTx=(a,b)=>b.date.localeCompare(a.date)||String(b.createdAt||'').locale
 function renderDonut(summary,parts){
  if(!parts.length)return empty('◌','아직 지출이 없어요','지출을 기록하면 분류별 비중이 표시됩니다.');
  const sum=parts.reduce((a,b)=>a+b[1],0);let degree=0;
- const grad=parts.map(([_,val],i)=>{const from=degree;degree+=val/Math.max(sum,1)*360;return `${COLORS[i%COLORS.length]} ${from}deg ${degree}deg`;}).join(',');
+ const grad=parts.map(([id,val])=>{const from=degree;degree+=val/Math.max(sum,1)*360;return `${categoryColor(category(id))} ${from}deg ${degree}deg`;}).join(',');
  return `<div class="donut-section"><div class="donut" style="background:conic-gradient(${grad});"><div class="donut-center"><span>총 지출</span><strong>${m(summary.expense)}</strong></div></div><div class="donut-legend">${parts.map(([id,val])=>`<div>${categoryIcon(category(id),15,'legend-category-icon')}<span>${esc(category(id)?.name||'미분류')}</span><strong>${m(val)}</strong></div>`).join('')}</div></div>`;
 }
 function renderTransactions(){
@@ -303,7 +309,7 @@ function renderAnalytics(){const s=currentSummary();const byCat=Object.entries(s
  return `${topBar('소비 분석','숫자를 통해 내 지출 습관을 발견해 보세요.',true,btn(`${ico('download',17)} CSV 내보내기`,'export-csv','','btn btn-secondary'))}
  <section class="summary-grid analytic"><div class="metric-card"><span class="metric-label">기간 수입</span><div class="metric-value">${m(s.income)}</div><p>실제로 들어온 돈</p></div><div class="metric-card"><span class="metric-label">순지출</span><div class="metric-value">${m(s.expense)}</div><p>환불 반영 · 이체/상환 제외</p></div><div class="metric-card"><span class="metric-label">남은 예산</span><div class="metric-value">${m(s.remaining)}</div><p>설정한 총예산 ${m(s.budget)}</p></div></section>
  <div class="analytics-grid"><section class="panel"><div class="section-heading"><div><h2>카테고리별 지출</h2><p>무엇에 가장 많이 썼을까요?</p></div></div>${renderDonut(s,byCat.slice(0,7))}</section><section class="panel"><div class="section-heading"><div><h2>최근 6개 기간 소비</h2><p>설정된 정산 시작일 기준</p></div></div><div class="bar-chart">${trend.map(x=>`<div class="bar-item"><strong>${compactMoney(x.expense)}</strong><div class="bar-track"><div class="bar-fill" style="height:${Math.max(3,100*x.expense/maxTrend)}%"></div></div><small>${Number(x.key.slice(-2))}월</small></div>`).join('')}</div></section></div>
- <section class="panel"><div class="section-heading"><div><h2>분류별 사용 금액</h2><p>카테고리 예산은 각 행의 편집 버튼으로 설정할 수 있어요.</p></div></div>${byCat.length?byCat.map(([cid,val],i)=>{const lim=state.budgets[cid]||0;return `<div class="category-meter"><div class="category-name">${categoryIcon(category(cid),18,'category-meter-icon')}<div><strong>${esc(category(cid)?.name||'기타')}</strong><small>${lim?`예산 ${m(lim)}`:'예산 미설정'}</small></div></div><div class="category-amount"><strong>${m(val)}</strong><button class="icon-btn small" data-action="budget-category" data-id="${esc(cid)}" aria-label="분류 예산 설정">${ico('edit',15)}</button></div><div class="category-bar"><i style="width:${Math.min(100,Math.round(val/(lim||max)*100))}%;background:${COLORS[i%COLORS.length]}"></i></div></div>`;}).join(''):empty('📈','분석할 거래가 없어요','지출 내역을 기록하면 비중과 추이가 나타납니다.')}</section>`;
+ <section class="panel"><div class="section-heading"><div><h2>분류별 사용 금액</h2><p>카테고리 예산은 각 행의 편집 버튼으로 설정할 수 있어요.</p></div></div>${byCat.length?byCat.map(([cid,val],i)=>{const lim=state.budgets[cid]||0;return `<div class="category-meter"><div class="category-name">${categoryIcon(category(cid),18,'category-meter-icon')}<div><strong>${esc(category(cid)?.name||'기타')}</strong><small>${lim?`예산 ${m(lim)}`:'예산 미설정'}</small></div></div><div class="category-amount"><strong>${m(val)}</strong><button class="icon-btn small" data-action="budget-category" data-id="${esc(cid)}" aria-label="분류 예산 설정">${ico('edit',15)}</button></div><div class="category-bar"><i style="width:${Math.min(100,Math.round(val/(lim||max)*100))}%;background:${categoryColor(category(cid))}"></i></div></div>`;}).join(''):empty('📈','분석할 거래가 없어요','지출 내역을 기록하면 비중과 추이가 나타납니다.')}</section>`;
 }
 function renderAccounts(){const bal=getAccountBalances(state);const debt=state.accounts.filter(a=>a.kind==='card').reduce((sum,a)=>sum+(bal[a.id]||0),0);const liquid=state.accounts.filter(a=>a.kind!=='card').reduce((sum,a)=>sum+(bal[a.id]||0),0);
  return `${topBar('자산 관리','통장과 카드의 흐름을 나누어 확인하세요.',false,btn(`${ico('plus',17)} 자산 추가`,'add-account'))}
