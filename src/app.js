@@ -145,7 +145,7 @@ function toast(message,type='info'){
 }
 let syncLabel='이 기기의 장부';
 const ledgerLink=startLedger({onSwitch:()=>{closeModal();pendingImport=[];},getState:()=>state,setState:s=>{state=s;render();},isBusy:()=>busy||!!modalContext,
- status:label=>{if(syncLabel!==label){syncLabel=label;if(state&&ui.tab==='settings')render();}},
+ status:label=>{if(syncLabel!==label){syncLabel=label;const badge=$('#sideBottom small');if(badge&&ledgerLink.signed)badge.textContent=label;if(state&&ui.tab==='settings')render();}},
  request:payload=>import('./web-account.js').then(m=>m.exchangeLedger(payload))});
 function syncButtons(){return syncLabel.startsWith('충돌')?`<p>같은 항목의 변경이 겹쳤습니다. 충돌한 값에만 아래 선택을 적용합니다.</p><span class="settings-actions"><button class="btn btn-secondary" data-action="sync-mine">이 기기의 값 사용</button> <button class="btn btn-secondary" data-action="sync-remote">다른 기기의 값 사용</button></span>`:'';}
 async function mutate(fn,notice='저장했습니다.'){
