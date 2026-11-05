@@ -1,3 +1,4 @@
+import {startLedger} from './account-ledger.js';
 import {KINDS,COLORS,initialState,money,isoDate,monthKey,shiftMonth,getPeriod,currentPeriodMonth,getSummary,getAccountBalances,calculateExpression,duplicateOf,suggestCategory,parsePastedLines,parseCsv,validateBackup,createDemoState} from './domain.js';
 import {loadState,saveState,loadUserState,loadUserDirty,loadUserSynced,saveUserState} from './db.js';
 import {CloudService} from './cloud.js';
@@ -142,16 +143,21 @@ function toast(message,type='info'){
  const el=$('#toast');el.innerHTML=`<span>${type==='error'?ico('alert',17):ico('check',17)}</span>${esc(message)}`;el.className=`toast show ${type}`;
  clearTimeout(toast.timer);toast.timer=setTimeout(()=>{el.className='toast';},4200);
 }
+let syncLabel='이 기기의 장부';
+const ledgerLink=startLedger({onSwitch:()=>{closeModal();pendingImport=[];},getState:()=>state,setState:s=>{state=s;render();},isBusy:()=>busy||!!modalContext,
+ status:label=>{if(syncLabel!==label){syncLabel=label;if(state&&ui.tab==='settings')render();}},
+ request:payload=>import('./web-account.js').then(m=>m.exchangeLedger(payload))});
+function syncButtons(){return syncLabel.startsWith('충돌')?`<p>같은 항목의 변경이 겹쳤습니다. 충돌한 값에만 아래 선택을 적용합니다.</p><span class="settings-actions"><button class="btn btn-secondary" data-action="sync-mine">이 기기의 값 사용</button> <button class="btn btn-secondary" data-action="sync-remote">다른 기기의 값 사용</button></span>`:'';}
 async function mutate(fn,notice='저장했습니다.'){
- if(busy)return;
+ if(busy||ledgerLink.blocked)return;
  if(activeUid&&!cloudReady){toast('클라우드 가계부를 불러오는 중입니다. 잠시 기다려 주세요.','error');return;}
- busy=true;
+ const syncScope=ledgerLink.scope;busy=true;
  try{
   const before=structuredClone(state),next=structuredClone(state);
   fn(next);validateBackup(next);
   if(activeUid){await saveUserState(activeUid,next,{dirty:true});localDirty=true;}
   else await saveState(next);
-  state=next;render();if(notice)toast(notice);
+  if(syncScope!==ledgerLink.scope)return;state=next;ledgerLink.changed();render();if(notice)toast(notice);
   if(activeUid)cloud.queueDiff(before,next).catch(e=>{console.error('Firestore sync:',e);toast('로컬에 저장했으나 클라우드 동기화에 실패했습니다. 설정에서 재전송하세요.','error');});
  }catch(e){console.error(e);toast(`저장하지 못했습니다: ${e.message}`,'error');}
  finally{busy=false;}
@@ -160,12 +166,13 @@ function render(){
  const existing=document.documentElement.dataset.theme;document.documentElement.dataset.theme=state.settings.theme||'light';
  const nowCount=pendingCount();const nav= NAV.map(([tab,label,icon])=>`<button class="nav-link ${ui.tab===tab?'active':''}" data-tab="${tab}" aria-current="${ui.tab===tab?'page':'false'}">${ico(icon,20)}<span>${label}</span>${tab==='transactions'&&nowCount?`<b class="nav-counter">${nowCount}</b>`:''}</button>`).join('');
  $('#desktopNav').innerHTML=nav;$('#mobileNav').innerHTML=nav;$('#brandSub').textContent='차곡차곡, 나의 돈 이야기';
- $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>${activeUid?'내 전용 클라우드 장부':'로컬 우선 가계부'}</strong><small>${esc(syncDescription())}</small></div><button class="sidebar-account-btn" data-tab="settings">${ico('shield',16)} 한눈 공통 계정</button>`;
+ $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>${ledgerLink.signed?'한눈 계정 장부':activeUid?'내 전용 클라우드 장부':'이 기기의 장부'}</strong><small>${esc(syncDescription())}</small></div><button class="sidebar-account-btn" data-tab="settings">${ico('shield',16)} 한눈 공통 계정</button>`;
  $('#page').innerHTML=({home:renderHome,transactions:renderTransactions,calendar:renderCalendar,analytics:renderAnalytics,accounts:renderAccounts,settings:renderSettings})[ui.tab]();
  const tabTitle=NAV.find(x=>x[0]===ui.tab)?.[1]||'가계부';$('#mobileTitle').textContent=tabTitle;
  updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:!!modalContext}); // SOFTM-ADFIT 날짜:20261022 : 화면 전환에서 광고 위치와 보호 상태만 갱신
 }
 function syncDescription(){
+ if(ledgerLink.signed)return syncLabel;
  if(!cloud.isConfigured())return '장부는 이 브라우저에 저장';
  if(!activeUid)return '비로그인 모드 · 이 기기에 저장';
  if(localDirty)return '기기 변경사항 보관됨 · 전송 확인 필요';
@@ -175,14 +182,14 @@ let suiteMenu, suiteAccount, loadingAccount;
 async function connectAccount(){
  if(suiteMenu)return suiteMenu;
  if(!loadingAccount)loadingAccount=import('./web-account.js').then(async module=>{
-  const mounted=await module.mountWebAccount(()=>{if(state&&ui.tab==='settings')render();});
+  const mounted=await module.mountWebAccount(user=>{ledgerLink.select(user?.uid);if(state&&ui.tab==='settings')render();});
   suiteMenu=mounted.menu;suiteAccount=mounted.account;if(state)render();return suiteMenu;
  }).finally(()=>{loadingAccount=null;});
  return loadingAccount;
 }
 function renderAuthPanel(){
  const user=suiteAccount?.currentUser;
- return `<section class="panel account-panel"><div class="section-heading"><div><h2>한눈 공통 계정</h2><p>${user?esc(user.displayName||user.email||'내 계정')+' · 로그인됨':'모바일과 같은 한눈 계정으로 로그인하세요.'}</p></div></div><p class="privacy-note">장부는 이 브라우저에 저장됩니다. 로그인해도 거래를 자동으로 업로드하거나 휴대전화 장부와 합치지 않습니다.</p><div class="settings-actions">${btn(user?'계정 메뉴 열기':'로그인 · 회원가입','suite-menu','','btn btn-secondary')}${user?btn('내 보관소 삭제','suite-delete','','btn btn-danger-outline'):''}</div></section>`;
+ return `<section class="panel account-panel"><div class="section-heading"><div><h2>한눈 공통 계정</h2><p>${user?esc(user.displayName||user.email||'내 계정')+' · 로그인됨':'모바일과 같은 한눈 계정으로 로그인하세요.'}</p></div></div><p class="privacy-note">같은 한눈 계정의 PC와 모바일에서 장부를 공유합니다. 문자·알림 원본과 첨부파일은 기기에 남습니다.</p><p>${esc(syncLabel)}</p>${syncButtons()}<div class="settings-actions">${btn(user?'계정 메뉴 열기':'로그인 · 회원가입','suite-menu','','btn btn-secondary')}${user?btn('내 보관소 삭제','suite-delete','','btn btn-danger-outline'):''}</div></section>`;
 }
 function topBar(title,subtitle='',period=true,actions=''){
  const s=currentSummary();return `<div class="page-head"><div><p class="eyebrow">GAGYEBU · 가계부</p><h1>${title}</h1>${subtitle?`<p class="subtitle">${subtitle}</p>`:''}</div><div class="head-right">${period?`<div class="period-nav"><button class="icon-btn" data-action="prev-month" aria-label="이전 기간">${ico('chevronleft',19)}</button><span>${esc(s.period.label)}</span><button class="icon-btn" data-action="next-month" aria-label="다음 기간">${ico('chevron',19)}</button></div>`:''}${actions}</div></div>`;
@@ -398,14 +405,15 @@ async function exportJson(){
 function csvEsc(val){let s=String(val??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return `"${s.replaceAll('"','""')}"`;}
 function exportCsv(){const header=['날짜','내역','금액','구분','계좌','받는계좌','분류','상태','메모','계산식'];const rows=state.transactions.map(t=>[t.date,t.title,t.amount,kindLabel(t.kind),acc(t.accountId)?.name||'',acc(t.toAccountId)?.name||'',category(t.categoryId)?.name||'',t.status==='confirmed'?'확정':'확인필요',t.memo||'',t.expression||'']);
  const content='\uFEFF'+[header,...rows].map(row=>row.map(csvEsc).join(',')).join('\r\n');saveDownload(new Blob([content],{type:'text/csv;charset=utf-8'}),`gagyebu-transactions-${isoDate()}.csv`);toast('거래 CSV를 다운로드했습니다.');}
-async function restoreJson(file){if(file.size>12000000){toast('12MB 이하의 JSON 파일만 복원할 수 있습니다.','error');return;}
- try{const data=JSON.parse(await file.text());validateBackup(data);if(!window.confirm(`백업 거래 ${data.transactions.length}건으로 현재 거래 ${state.transactions.length}건을 전체 교체합니다. 기존 기록을 백업하셨나요?`))return;
- if(activeUid)await mutate(s=>{Object.assign(s,structuredClone(data));},'백업을 복원하고 클라우드에 저장을 요청했습니다.');else {await saveState(data);state=data;render();toast('백업에서 복원했습니다.');}ui.month=currentPeriodMonth(state.settings.periodStartDay);closeModal();}catch(e){toast(`복원 실패: ${e.message}`,'error');}}
+async function restoreJson(file){const scope=ledgerLink.scope;if(ledgerLink.blocked)return;if(ledgerLink.signed&&!confirm('복원한 내용이 이 계정의 PC와 모바일 장부에 모두 반영됩니다. 계속할까요?'))return;if(file.size>12000000){toast('12MB 이하의 JSON 파일만 복원할 수 있습니다.','error');return;}
+ try{const data=JSON.parse(await file.text());validateBackup(data);if(scope!==ledgerLink.scope)return;if(!window.confirm(`백업 거래 ${data.transactions.length}건으로 현재 거래 ${state.transactions.length}건을 전체 교체합니다. 기존 기록을 백업하셨나요?`))return;
+ if(activeUid)await mutate(s=>{Object.assign(s,structuredClone(data));},'백업을 복원하고 클라우드에 저장을 요청했습니다.');else {await saveState(data);if(scope!==ledgerLink.scope)return;state=data;ledgerLink.changed();render();toast('백업에서 복원했습니다.');}ui.month=currentPeriodMonth(state.settings.periodStartDay);closeModal();}catch(e){toast(`복원 실패: ${e.message}`,'error');}}
 async function handleClick(e){const button=e.target.closest('[data-action],[data-tab],[data-filter],[data-day]');if(!button || (button.classList.contains('modal-backdrop') && e.target.closest('.dialog')))return;
  if(button.dataset.tab){ui.tab=button.dataset.tab;ui.day=null;ui.visible=80;render();window.scrollTo({top:0,behavior:'instant'});return;}
  if(button.dataset.filter){ui.filter=button.dataset.filter;ui.visible=80;render();return;}
  if(button.dataset.day){ui.day=button.dataset.day;render();return;}
  const action=button.dataset.action,tid=button.dataset.id,t=state.transactions.find(t=>t.id===tid);
+ if(action==='sync-mine'||action==='sync-remote'){ledgerLink.resolve(action==='sync-mine'?'mine':'remote');return;}
  if(action==='suite-menu'){try{(await connectAccount()).open();}catch{toast('계정 메뉴를 열 수 없습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.','error');}return;}
  if(action==='suite-delete'){try{await (await import('./web-account.js')).deleteVault(suiteAccount,toast);}catch(e){toast(e.message,'error');}return;}
  if(['login-google','login-kakao','login-naver','login-apple'].includes(action)){
@@ -464,6 +472,7 @@ async function handleClick(e){const button=e.target.closest('[data-action],[data
  if(action==='remove-photo'){if(modalContext){modalContext.attachment=null;modalContext.attachmentPath=null;}button.closest('.attached-image')?.remove();toast('저장하면 첨부사진이 제거됩니다.');return;}
  if(action==='load-demo'){if(state.transactions.length>0){toast('샘플은 빈 장부에서만 불러올 수 있습니다.','error');return;}await mutate(s=>{const demo=createDemoState();s.transactions=demo.transactions;s.accounts=demo.accounts;s.categories=demo.categories;s.settings=demo.settings;},'체험용 데이터를 불러왔습니다.');return;}
  if(action==='reset-all'){
+  if(ledgerLink.signed){toast('계정 장부는 계정 설정의 내 보관소 삭제에서 관리하세요. 비로그인 장부를 초기화하려면 로그아웃하세요.','error');return;}
   if(!window.confirm(`현재 ${activeUid?'클라우드와 기기':'기기'} 장부의 모든 거래·자산·분류·설정을 초기화합니다. JSON 백업을 먼저 권장합니다. 계속할까요?`))return;
   if(!window.confirm('삭제한 데이터는 복구하기 어렵습니다. 정말 초기화할까요?'))return;
   if(activeUid)await mutate(s=>Object.assign(s,initialState()),'클라우드 장부 초기화를 요청했습니다.');
