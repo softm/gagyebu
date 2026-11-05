@@ -822,3 +822,11 @@ h1,h2,h3,.brand-title,.hero-total,.metric-value,.transaction-name,.transaction-a
   .category-meter{grid-template-columns:minmax(0,1fr) 112px}
   .category-setting-main{gap:9px}
 }
+
+.account-brand-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.account-brand-row>.brand{min-width:0;flex:1;padding-inline:0}
+#desktopAccountSlot,#mobileAccountSlot{display:inline-flex;align-items:center;flex:none;min-width:48px;min-height:48px}
+.account-panel .settings-actions button{min-height:48px;white-space:normal}
+@media(max-width:830px){
+ .mobile-header{min-height:calc(57px + env(safe-area-inset-top,0px));height:auto;padding-block-start:env(safe-area-inset-top,0px);padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}
+}

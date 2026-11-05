@@ -160,29 +160,29 @@ function render(){
  const existing=document.documentElement.dataset.theme;document.documentElement.dataset.theme=state.settings.theme||'light';
  const nowCount=pendingCount();const nav= NAV.map(([tab,label,icon])=>`<button class="nav-link ${ui.tab===tab?'active':''}" data-tab="${tab}" aria-current="${ui.tab===tab?'page':'false'}">${ico(icon,20)}<span>${label}</span>${tab==='transactions'&&nowCount?`<b class="nav-counter">${nowCount}</b>`:''}</button>`).join('');
  $('#desktopNav').innerHTML=nav;$('#mobileNav').innerHTML=nav;$('#brandSub').textContent='차곡차곡, 나의 돈 이야기';
- $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>${activeUid?'내 전용 클라우드 장부':'로컬 우선 가계부'}</strong><small>${esc(syncDescription())}</small></div><button class="sidebar-account-btn" data-tab="settings">${ico('shield',16)} ${activeUid?'내 계정·동기화':'로그인·동기화'}</button>`;
+ $('#sideBottom').innerHTML=`<div class="side-peek"><span class="side-peek-icon">${ico('shield',18)}</span><strong>${activeUid?'내 전용 클라우드 장부':'로컬 우선 가계부'}</strong><small>${esc(syncDescription())}</small></div><button class="sidebar-account-btn" data-tab="settings">${ico('shield',16)} 한눈 공통 계정</button>`;
  $('#page').innerHTML=({home:renderHome,transactions:renderTransactions,calendar:renderCalendar,analytics:renderAnalytics,accounts:renderAccounts,settings:renderSettings})[ui.tab]();
  const tabTitle=NAV.find(x=>x[0]===ui.tab)?.[1]||'가계부';$('#mobileTitle').textContent=tabTitle;
  updateAdContext({tab:ui.tab,filter:ui.filter,modalOpen:!!modalContext}); // SOFTM-ADFIT 날짜:20261022 : 화면 전환에서 광고 위치와 보호 상태만 갱신
 }
 function syncDescription(){
- if(!cloud.isConfigured())return 'Firebase 프로젝트 연결 전 · 이 기기에 저장';
+ if(!cloud.isConfigured())return '장부는 이 브라우저에 저장';
  if(!activeUid)return '비로그인 모드 · 이 기기에 저장';
  if(localDirty)return '기기 변경사항 보관됨 · 전송 확인 필요';
  return ({loading:'클라우드 불러오는 중',saving:'Firestore 동기화 중',synced:'Firestore 동기화 완료',error:'동기화 오류 · 로컬 기록 보관'})[cloudStatus]||'연결 확인 중';
 }
+let suiteMenu, suiteAccount, loadingAccount;
+async function connectAccount(){
+ if(suiteMenu)return suiteMenu;
+ if(!loadingAccount)loadingAccount=import('./web-account.js').then(async module=>{
+  const mounted=await module.mountWebAccount(()=>{if(state&&ui.tab==='settings')render();});
+  suiteMenu=mounted.menu;suiteAccount=mounted.account;if(state)render();return suiteMenu;
+ }).finally(()=>{loadingAccount=null;});
+ return loadingAccount;
+}
 function renderAuthPanel(){
- const help='<a class="inline-link" target="_blank" rel="noopener noreferrer" href="https://github.com/softm/gagyebu/blob/main/docs/FIREBASE_SETUP.md">Firebase 연결 안내 ↗</a>';
- if(!cloud.isConfigured())return `<section class="panel account-panel"><div class="section-heading"><div><h2>계정 및 클라우드 보관</h2><p>로그인·동기화 연동 코드가 준비되었습니다.</p></div></div><p class="form-note">Firebase 프로젝트의 웹 설정값과 인증 제공자 설정을 등록해야 실제 로그인이 활성화됩니다. 그전까지 모든 기록은 이 브라우저에 보관됩니다.</p>${help}</section>`;
- if(!authUser)return `<section class="panel account-panel"><div class="section-heading"><div><h2>로그인 · 여러 기기 동기화</h2><p>로그인 후 내 장부가 Firestore에 저장됩니다. 비로그인 기록은 그대로 유지됩니다.</p></div></div>
- <div class="social-login-grid"><button type="button" class="social-btn social-kakao" data-action="login-kakao">카카오로 로그인</button><button type="button" class="social-btn social-naver" data-action="login-naver">네이버로 로그인</button><button type="button" class="social-btn social-google" data-action="login-google">${ico('shield',17)} Google로 로그인</button><button type="button" class="social-btn social-apple" data-action="login-apple">Apple로 로그인</button></div>
- <p class="privacy-note">계정마다 별도의 비공개 장부를 사용합니다. 이전 로컬 기록은 로그인 후 직접 가져오기를 선택할 수 있습니다. 다른 SNS로 로그인하면 별도 계정이 만들어질 수 있습니다.</p></section>`;
- const name=authUser.displayName||authUser.email||({kakao:'카카오 계정',naver:'네이버 계정'}[String(authUser.uid).split(':')[0]]||'로그인 사용자');
- return `<section class="panel account-panel"><div class="section-heading"><div><h2>내 계정과 클라우드 보관</h2><p>${esc(name)} · ${esc(syncDescription())}</p></div><span class="cloud-indicator ${localDirty||cloudStatus==='error'?'warn':'ok'}">${localDirty?'동기화 확인 필요':cloudStatus==='synced'?'동기화됨':cloudStatus==='saving'?'저장 중':'확인 중'}</span></div>
- <p class="privacy-note">거래 ${state.transactions.length.toLocaleString()}건 · 자산 ${state.accounts.length}개 · 카테고리 ${state.categories.length}개 · 예산·설정 · 영수증 사진은 사용자별로 보관됩니다.</p>
- ${cloudMessage?`<p class="form-note">${esc(cloudMessage)}</p>`:''}
- <div class="settings-actions">${btn('기기 기록 클라우드로 가져오기','merge-guest','','btn btn-secondary')}${localDirty?btn('미전송 기록 다시 동기화','retry-sync','','btn btn-primary'):''}${btn('로그아웃','logout','','btn btn-secondary')}</div>
- <p class="privacy-note">다른 소셜 계정의 장부는 자동으로 합치지 않습니다. 브라우저가 오프라인인 경우 로컬 변경사항이 보존되며, 클라우드 업로드 완료 여부를 확인하세요.</p></section>`;
+ const user=suiteAccount?.currentUser;
+ return `<section class="panel account-panel"><div class="section-heading"><div><h2>한눈 공통 계정</h2><p>${user?esc(user.displayName||user.email||'내 계정')+' · 로그인됨':'모바일과 같은 한눈 계정으로 로그인하세요.'}</p></div></div><p class="privacy-note">장부는 이 브라우저에 저장됩니다. 로그인해도 거래를 자동으로 업로드하거나 휴대전화 장부와 합치지 않습니다.</p><div class="settings-actions">${btn(user?'계정 메뉴 열기':'로그인 · 회원가입','suite-menu','','btn btn-secondary')}${user?btn('내 보관소 삭제','suite-delete','','btn btn-danger-outline'):''}</div></section>`;
 }
 function topBar(title,subtitle='',period=true,actions=''){
  const s=currentSummary();return `<div class="page-head"><div><p class="eyebrow">GAGYEBU · 가계부</p><h1>${title}</h1>${subtitle?`<p class="subtitle">${subtitle}</p>`:''}</div><div class="head-right">${period?`<div class="period-nav"><button class="icon-btn" data-action="prev-month" aria-label="이전 기간">${ico('chevronleft',19)}</button><span>${esc(s.period.label)}</span><button class="icon-btn" data-action="next-month" aria-label="다음 기간">${ico('chevron',19)}</button></div>`:''}${actions}</div></div>`;
@@ -406,6 +406,8 @@ async function handleClick(e){const button=e.target.closest('[data-action],[data
  if(button.dataset.filter){ui.filter=button.dataset.filter;ui.visible=80;render();return;}
  if(button.dataset.day){ui.day=button.dataset.day;render();return;}
  const action=button.dataset.action,tid=button.dataset.id,t=state.transactions.find(t=>t.id===tid);
+ if(action==='suite-menu'){try{(await connectAccount()).open();}catch{toast('계정 메뉴를 열 수 없습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.','error');}return;}
+ if(action==='suite-delete'){try{await (await import('./web-account.js')).deleteVault(suiteAccount,toast);}catch(e){toast(e.message,'error');}return;}
  if(['login-google','login-kakao','login-naver','login-apple'].includes(action)){
   try{if(action==='login-google')await cloud.loginGoogle();else if(action==='login-apple')await cloud.loginApple();else await cloud.loginSocial(action.split('-')[1]);}
   catch(e){toast(`로그인 실패: ${e.message}`,'error');}return;
@@ -495,7 +497,7 @@ async function boot(){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalHost').innerHTML){closeModal();return;}if(e.key.toLowerCase()==='n'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!$('#modalHost').innerHTML&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();openTransaction();}});
  // SOFTM-PWA-SCOPE 날짜:20261022 : Pages 하위 경로의 PWA가 사이트 루트 범위를 요청해 등록 실패하지 않게 함
  if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register(new URL('../sw.js',import.meta.url),{scope:new URL('../',import.meta.url).pathname}).catch(err=>console.warn('PWA 등록 실패',err));
- cloud.start().catch(err=>toast(`클라우드 연결 실패: ${err.message}`,'error'));
+ connectAccount().catch(()=>{});
 }
 boot();
 
