@@ -220,6 +220,17 @@ small{font-size:12px}
 .dialog-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:21px}
 .dialog-head h2{font-size:21px;letter-spacing:-.6px;margin:4px 0 0}
 .dialog-content{min-width:0}
+.transaction-kind-fieldset{border:0;margin:0;padding:0;min-width:0}
+.transaction-kind-fieldset legend{font-size:12px;font-weight:780;margin-bottom:9px;color:var(--text)}
+.primary-kinds{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.primary-kinds label{min-width:0}
+.primary-kinds span{display:flex!important;align-items:center;justify-content:center;gap:7px;min-height:52px;font-size:15px!important;font-weight:800!important}
+.primary-kinds label:has(input[value="expense"]:checked) span{background:#fff0ec;border-color:var(--danger);color:var(--danger)}
+.primary-kinds label:has(input[value="income"]:checked) span{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
+.other-transaction-kinds{margin-top:9px}
+.other-transaction-kinds summary{font-size:11px;color:var(--muted);cursor:pointer;padding:5px 1px;list-style-position:inside}
+.other-transaction-kinds[open] summary{margin-bottom:7px}
+.secondary-kinds span{font-size:11px}
 .type-selector{display:flex;gap:7px;flex-wrap:wrap}
 .type-selector label{flex:1;min-width:72px}
 .type-selector input{position:absolute;opacity:0;width:1px;height:1px}
