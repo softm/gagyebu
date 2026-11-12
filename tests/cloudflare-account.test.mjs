@@ -6,14 +6,14 @@ test('Cloudflare cutover only when encrypted D1 ledger is ready',()=>{
  const bridge=source('src/web-account.js');
  assert.match(bridge,/health\.features\?\.gagyebuLedger===true/);
  assert.match(bridge,/web-account-cloudflare\.js/);
- assert.doesNotMatch(bridge,/web-account-legacy\\.js/);
+ assert.doesNotMatch(bridge,/web-account-legacy\.js/);
  assert.match(bridge,/catch\{/);
 });
 test('PC runtime has no Firebase SDK import or legacy account fallback',()=>{
  const bridge=source('src/web-account.js');
  const service=source('src/cloud.js');
- assert.doesNotMatch(bridge,/web-account-legacy\\.js/);
- assert.doesNotMatch(service,/gstatic\\.com|firebase-app\\.js|firebase-firestore\\.js/);
+ assert.doesNotMatch(bridge,/web-account-legacy\.js/);
+ assert.doesNotMatch(service,/gstatic\.com|firebase-app\.js|firebase-firestore\.js/);
  assert.match(service,/Cloudflare-only/);
 });
 test('Cloudflare site bridge is scoped to gagyebu and has no direct Firebase writes',()=>{
