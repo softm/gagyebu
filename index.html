@@ -21,13 +21,13 @@
 <div class="app-layout">
 <aside class="sidebar" aria-label="주 메뉴">
  <div class="account-brand-row"><a class="brand" href="./" aria-label="가계부 홈"><span class="brand-symbol"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGzho8Y05S2G-l4bpRqJJfFa5ISEfXFOdLxvTizeG4y3ZWjeyMStILtLXcejn4BsqG1-1-O-jh5_EpHAmsXxzuPFF6htujTUBptmi0D1lto4vR2QQiJKLjCcohF9aNG_tqqABbCzNzlbGqKOQNP7r6rpv-ew9ODM-bu8T58sMrgFvPxlGQmvxWTG4v8fqielwopHlQtQMJ_YZ9JxsA7c8_-KOttEQLGZDmcB4nkCg8jjKcmDVODGEIYpi6nstz-a6NKnw" alt="" /></span><span><span class="brand-title">가계부</span><div class="brand-sub" id="brandSub">나만의 소비 기록</div></span></a>
- <span id="desktopAccountSlot"></span></div>
+ <span id="desktopAccountSlot"><button type="button" class="account-entry-button" data-account-entry aria-label="로그인" title="로그인">♙</button></span></div>
  <div class="sidebar-label">MY MONEY</div>
  <nav class="desktop-nav" id="desktopNav" aria-label="PC 메뉴"></nav>
  <div class="sidebar-bottom" id="sideBottom"></div>
 </aside>
 <div style="display:flex;flex-direction:column;min-width:0;flex:1">
-<header class="mobile-header"><a class="mobile-brand" href="./"><span class="brand-symbol"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGzho8Y05S2G-l4bpRqJJfFa5ISEfXFOdLxvTizeG4y3ZWjeyMStILtLXcejn4BsqG1-1-O-jh5_EpHAmsXxzuPFF6htujTUBptmi0D1lto4vR2QQiJKLjCcohF9aNG_tqqABbCzNzlbGqKOQNP7r6rpv-ew9ODM-bu8T58sMrgFvPxlGQmvxWTG4v8fqielwopHlQtQMJ_YZ9JxsA7c8_-KOttEQLGZDmcB4nkCg8jjKcmDVODGEIYpi6nstz-a6NKnw" alt="" /></span>가계부<span class="mobile-sub">/ <span id="mobileTitle">홈</span></span></a><span id="mobileAccountSlot"></span></header>
+<header class="mobile-header"><a class="mobile-brand" href="./"><span class="brand-symbol"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGzho8Y05S2G-l4bpRqJJfFa5ISEfXFOdLxvTizeG4y3ZWjeyMStILtLXcejn4BsqG1-1-O-jh5_EpHAmsXxzuPFF6htujTUBptmi0D1lto4vR2QQiJKLjCcohF9aNG_tqqABbCzNzlbGqKOQNP7r6rpv-ew9ODM-bu8T58sMrgFvPxlGQmvxWTG4v8fqielwopHlQtQMJ_YZ9JxsA7c8_-KOttEQLGZDmcB4nkCg8jjKcmDVODGEIYpi6nstz-a6NKnw" alt="" /></span>가계부<span class="mobile-sub">/ <span id="mobileTitle">홈</span></span></a><span id="mobileAccountSlot"><button type="button" class="account-entry-button" data-account-entry aria-label="로그인" title="로그인">♙</button></span></header>
 <!-- SOFTM-ADFIT 날짜:20261022 : 화면 재렌더와 광고 iframe의 수명주기를 분리 -->
 <main class="main-content" aria-live="polite"><div id="page"><p>가계부 불러오는 중...</p></div><div id="analyticsAdSlot" hidden></div></main>
 </div>
@@ -36,6 +36,25 @@
 <div id="modalHost"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input id="csvInput" type="file" accept=".csv,text/csv,text/plain" hidden/>
 <input id="jsonInput" type="file" accept=".json,application/json" hidden/>
+<style>
+.account-entry-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:1px solid #d8e1e7;background:#fff;color:#243d54;font-size:24px;cursor:pointer}
+.account-entry-button:focus-visible{outline:3px solid #315eaa;outline-offset:2px}
+</style>
+<script>
+document.addEventListener('click',async event=>{
+ const trigger=event.target.closest('[data-account-entry]');
+ if(!trigger)return;
+ trigger.disabled=true;
+ try{
+  const module=await import('./src/web-account.js?v=entry-fallback-20261113');
+  const mounted=await module.mountWebAccount(()=>{});
+  mounted.menu.open();
+ }catch(error){
+  console.error('로그인 연결 실패',error);
+  alert('로그인 연결 실패: '+(error?.message||String(error)));
+ }finally{trigger.disabled=false;}
+});
+</script>
 <script type="module">
 const isAndroidShell = navigator.userAgent.includes('SoftmGagyebuAndroid/');
 import(isAndroidShell ? './src/android-app.js' : './src/app.js');
