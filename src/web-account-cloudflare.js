@@ -24,7 +24,7 @@ export async function mountCloudflareWebAccount(changed){
  const account={backend:'cloudflare',get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:user.displayName||'한눈 계정',photoURL:user.photoURL||null}:null;},
   login:provider=>client.login(provider),logout:()=>client.logout(),exchangeLedger:payload=>client.exchangeLedger(payload)};
  const style=el('style');style.textContent=`
- .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1px solid #d8e1e7;border-radius:50%;background:#fff;color:#243d54;cursor:pointer;font-weight:700}
+ .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:46px;min-height:46px;max-width:132px;padding:4px 7px;border:1px solid #d8e1e7;border-radius:24px;background:#fff;color:#243d54;cursor:pointer;font-weight:700;white-space:nowrap;overflow:hidden}.cf-gagyebu-trigger .cf-trigger-avatar{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;background:#eaf2fb;color:#1d507a;font-weight:800;overflow:hidden}.cf-gagyebu-trigger .cf-trigger-avatar img{width:100%;height:100%;object-fit:cover}.cf-gagyebu-trigger .cf-trigger-name{display:inline-block;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:13px}.cf-gagyebu-trigger .cf-trigger-chevron{flex:none;font-size:11px;color:#758397}.cf-gagyebu-trigger:focus-visible{outline:3px solid #315eaa;outline-offset:2px}@media(max-width:480px){.cf-gagyebu-trigger{max-width:104px;padding:3px 5px;gap:4px}.cf-gagyebu-trigger .cf-trigger-avatar{width:32px;height:32px}.cf-gagyebu-trigger .cf-trigger-name{font-size:12px}}
  .cf-gagyebu-overlay{position:fixed;inset:0;background:#0e192c85;z-index:999999;display:grid;place-items:center;padding:16px}
  .cf-gagyebu-dialog{background:#fff;color:#172635;border-radius:18px;width:min(100%,420px);padding:22px;box-shadow:0 14px 50px #0003}
  .cf-gagyebu-dialog h2{margin:0 0 8px;font-size:22px}
@@ -114,7 +114,37 @@ export async function mountCloudflareWebAccount(changed){
  }
  const buttons=[];
  function renderTriggers(){
-  for(const b of buttons){b.textContent=account.currentUser?'계정 ✓':'계정';b.setAttribute('aria-label',account.currentUser?'한눈 공통 계정 관리':'한눈 공통 계정 로그인');}
+  const user=account.currentUser;
+  for(const b of buttons){
+   b.replaceChildren();
+   b.classList.toggle('cf-trigger-signed-in',!!user);
+   if(!user){
+    b.textContent='계정';
+    b.setAttribute('aria-label','한눈 공통 계정 로그인');
+    b.title='한눈 공통 계정 로그인';
+    continue;
+   }
+   const name=String(user.displayName||'한눈 계정').trim()||'한눈 계정';
+   const avatar=el('span','cf-trigger-avatar',name.slice(0,1));
+   const photo=user.photoURL;
+   if(typeof photo==='string'&&photo.length<=2048){
+    try{
+     const url=new URL(photo);
+     if(url.protocol==='https:'&&!url.username&&!url.password){
+      const img=document.createElement('img');
+      img.src=url.href;img.alt='';img.referrerPolicy='no-referrer';img.loading='lazy';
+      img.addEventListener('error',()=>{img.remove();avatar.textContent=name.slice(0,1);},{once:true});
+      avatar.replaceChildren(img);
+     }
+    }catch{}
+   }
+   const label=el('span','cf-trigger-name',name);
+   const chevron=el('span','cf-trigger-chevron','⌄');
+   chevron.setAttribute('aria-hidden','true');
+   b.append(avatar,label,chevron);
+   b.setAttribute('aria-label',name+' 계정 관리');
+   b.title=name+' · 계정 관리';
+  }
  }
  for(const id of ['desktopAccountSlot','mobileAccountSlot']){
   const target=document.getElementById(id);if(!target)continue;
