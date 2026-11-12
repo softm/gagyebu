@@ -56,3 +56,17 @@ test('transient Cloudflare outage never silently signs in to legacy Firebase',()
  assert.match(bridge,/health\.features\?\.gagyebuLedger===true/);
  assert.match(bridge,/loading=null/);
 });
+
+test('signed-in account buttons render profile image or name on PC and mobile, never a generic label',()=>{
+ const ui=source('src/web-account-cloudflare.js');
+ assert.match(ui,/for\(const id of \['desktopAccountSlot','mobileAccountSlot'\]\)/);
+ assert.match(ui,/b\.replaceChildren\(\)/);
+ assert.match(ui,/const name=String\(user\.displayName/);
+ assert.match(ui,/const avatar=el\('span','cf-trigger-avatar'/);
+ assert.match(ui,/const label=el\('span','cf-trigger-name',name\)/);
+ assert.match(ui,/b\.append\(avatar,label,chevron\)/);
+ assert.match(ui,/b\.textContent='계정'/);
+ assert.match(ui,/img\.referrerPolicy='no-referrer'/);
+ assert.match(ui,/img\.addEventListener\('error'/);
+ assert.match(ui,/b\.setAttribute\('aria-label',name\+' 계정 관리'\)/);
+});
