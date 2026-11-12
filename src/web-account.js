@@ -4,7 +4,7 @@
 let impl=null,loading=null;
 async function backend(){
  if(impl)return impl;
- if(!loading)loading=import('./web-account-cloudflare.js?v=gagyebu-isolated-worker-20261113b')
+ if(!loading)loading=import('./web-account-cloudflare.js?v=gagyebu-sdk-syntax-fixed-20261113')
   .then(module=>(impl=module,module))
   .finally(()=>{loading=null;});
  return loading;
