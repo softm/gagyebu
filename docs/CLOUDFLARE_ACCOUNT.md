@@ -24,6 +24,12 @@
 5. PC 가계부 웹을 새로고침하면 Cloudflare 로그인 메뉴를 사용한다. 기존 IndexedDB의 `main` 비로그인 장부는 보존되며 최초 합치기는 **명시적 확인**.
 6. 소액의 테스트 장부 1건으로 저장 → 새로고침 → 같은 계정 로그인 → 해당 기록 확인. 동시 수정/계정 전환/동기화 지연 테스트 후 운영 사용.
 
+## 2026-11-12 코드 안전 점검
+- Cloudflare /health 호출이 일시적으로 실패하거나 타임아웃되면 **Firebase 계정으로 자동 전환하지 않고** 오류를 표시합니다. 로컬 장부는 계속 보존하며 다음 로그인 시 재시도합니다.
+- `features.gagyebuLedger=false`가 서버에서 정상 응답으로 명시된 경우에만 레거시 모듈을 선택합니다.
+- PC GitHub CI는 정적 코드·단위 테스트이며 실제 Google 로그인, D1 쓰기 → 새로고침 → 다시 읽기, PC↔Android 동기화의 성공 증거가 아닙니다.
+- Android는 Google OAuth 네이티브 PKCE/앱 링크 및 Worker 전용 세션 교환 구현이 필요합니다. Firebase Auth 토큰을 Cloudflare 세션으로 간주해서 전송하거나 장부를 덮어쓰면 안 됩니다.
+
 ## 중요한 경계
 - 로그인해도 기존 Firebase UID/원격 장부가 자동으로 새 Cloudflare UID로 복제되거나 합쳐지지 않는다.
 - 기존 Firebase 계정별 로컬 캐시는 계속 IndexedDB에 유지한다. 다른 UID로 저장되는 D1 새 장부와 자동 통합하지 않는다.
