@@ -19,7 +19,7 @@ async function backend(){
    if(health.ok!==true)throw Error('Cloudflare 계정 서버가 준비되지 않았습니다. 잠시 후 다시 시도하세요.');
    // An explicitly disabled D1 feature can still opt into the legacy bridge.
    return health.features?.gagyebuLedger===true
-     ?import('./web-account-cloudflare.js')
+     ?import('./web-account-cloudflare.js?v=profile-header-20261112')
      :import('./web-account-legacy.js');
  })().then(module=>{impl=module;return module;}).finally(()=>loading=null);
  return loading;
