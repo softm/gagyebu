@@ -22,7 +22,7 @@ export async function mountCloudflareWebAccount(changed){
  const {createCloudflareAccountClient}=await import(CLIENT);
  const client=createCloudflareAccountClient({baseUrl:WORKER,siteId:'gagyebu'});
  const account={backend:'cloudflare',get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:'Cloudflare 공통 계정'}:null;},
-  login:()=>client.login(),logout:()=>client.logout(),exchangeLedger:payload=>client.exchangeLedger(payload)};
+  login:provider=>client.login(provider),logout:()=>client.logout(),exchangeLedger:payload=>client.exchangeLedger(payload)};
  const style=el('style');style.textContent=`
  .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1px solid #d8e1e7;border-radius:50%;background:#fff;color:#243d54;cursor:pointer;font-weight:700}
  .cf-gagyebu-overlay{position:fixed;inset:0;background:#0e192c85;z-index:999999;display:grid;place-items:center;padding:16px}
@@ -59,7 +59,7 @@ export async function mountCloudflareWebAccount(changed){
   const user=account.currentUser;
   dialog.append(el('p','',user?'Cloudflare 계정으로 로그인되어 있습니다.':'Google·카카오·네이버 중 원하는 SNS로 공통 계정에 로그인하세요.'));
   if(user){
-   dialog.append(el('p','', '로그인됨 · 계정별 장부는 암호화되어 D1에 저장됩니다.'));
+   dialog.append(el('p','', '로그인됨 · '+({google:'Google',kakao:'카카오',naver:'네이버'}[client.currentUser?.provider]||'한눈 공통 계정')+' · 장부는 암호화되어 D1에 저장됩니다.'));
    const manage=el('a','', '공통 계정관리 열기');
    manage.href=WORKER+'/account';manage.target='_blank';manage.rel='noopener noreferrer';
    manage.style.display='block';manage.style.textAlign='center';manage.style.marginTop='14px';
@@ -72,7 +72,7 @@ export async function mountCloudflareWebAccount(changed){
     if(providerStatus[id]){
      action(label+'로 계속하기',async()=>{
        // Common account hub chooses the OAuth provider; popup must open in this click.
-       const next=await account.login();
+       const next=await account.login(id);
        await changed(next);close();renderTriggers();
      },id==='google');
     }else{
