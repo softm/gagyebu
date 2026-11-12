@@ -11,7 +11,7 @@ export async function mountCloudflareWebAccount(changed){
  if(mounted)return mounted;
  const {createCloudflareAccountClient}=await import(CLIENT);
  const client=createCloudflareAccountClient({baseUrl:WORKER,siteId:'gagyebu'});
- const account={get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:'Cloudflare 공통 계정'}:null;},
+ const account={backend:'cloudflare',get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:'Cloudflare 공통 계정'}:null;},
   login:()=>client.login(),logout:()=>client.logout(),exchangeLedger:payload=>client.exchangeLedger(payload)};
  const style=el('style');style.textContent=`
  .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1px solid #d8e1e7;border-radius:50%;background:#fff;color:#243d54;cursor:pointer;font-weight:700}
