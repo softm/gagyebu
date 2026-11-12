@@ -48,3 +48,11 @@ test('Cloudflare deletion controls are disabled; native Android assets remain se
  assert.match(app,/suiteAccount\?\.backend!=='cloudflare'/);
  assert.match(source('src/web-account.js'),/Cloudflare 보관소 삭제 기능은 아직 지원되지 않습니다/);
 });
+
+test('transient Cloudflare outage never silently signs in to legacy Firebase',()=>{
+ const bridge=source('src/web-account.js');
+ assert.match(bridge,/if\(!response\.ok\)throw Error/);
+ assert.match(bridge,/throw Error\('Cloudflare 계정 서버에 연결하지 못했습니다/);
+ assert.match(bridge,/health\.features\?\.gagyebuLedger===true/);
+ assert.match(bridge,/loading=null/);
+});
