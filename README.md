@@ -27,9 +27,13 @@
 
 ## 한눈 공통 계정
 
-상단 계정 아이콘에서 모바일과 같은 한눈 계정으로 로그인하거나 회원가입한다. Google과 카카오를 지원하며 네이버 일반 공개 승인은 별도다. 로그인하면 같은 계정의 PC·Android 장부를 연다. 기존 기기 장부를 처음 합칠 때 확인하며, 비로그인 원본은 따로 유지한다. 거래·자산·분류·예산·설정을 공유하고, 원본 첨부와 Android 확인 대기 항목은 기기에 남긴다.
+PC 웹은 Cloudflare Workers + D1 기반 공통 계정으로 단계적으로 이전 중입니다. Cloudflare의 `GAGYEBU_LEDGER_KEY_V1` Secret이 등록되고 API `/health`의 `features.gagyebuLedger=true`가 확인되면 Cloudflare 로그인·암호화 동기화가 활성화됩니다. 미설정일 때는 기존 Firebase 공통 계정과 장부 연결을 유지합니다.
 
-설정의 **내 보관소 삭제**는 현재 계정의 가계부 원격 보관소만 대상으로 한다. 최근 인증과 별도 확인을 요구하며, 다른 한눈 사이트·SNS 계정·이 기기의 장부는 유지한다.
+새 Cloudflare 가입자와 기존 Firebase 사용자는 자동으로 하나의 UID가 되지 않습니다. 비로그인 원본과 IndexedDB 계정별 장부는 삭제하지 않고, 최초 장부 합치기는 사용자 확인 후에만 합니다. SMS/알림 원문, 영수증 파일 및 Android 확인 대기 후보는 서버에 보내지 않습니다.
+
+**Android는 아직 기존 Firebase 인증/동기화 경로를 사용합니다.** 새 PC Cloudflare 장부와의 동기화는 Android 전용 App Link·네이티브 인증 변경과 검증 이후에 가능합니다.
+
+설치·검증 절차와 보안 경계: [Cloudflare PC 계정 전환 안내](docs/CLOUDFLARE_ACCOUNT.md).
 
 ## 로컬 실행
 
