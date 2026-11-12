@@ -24,7 +24,13 @@ export async function mountCloudflareWebAccount(changed){
  const account={backend:'cloudflare',get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:user.displayName||'한눈 계정',photoURL:user.photoURL||null}:null;},
   login:provider=>client.login(provider),logout:()=>client.logout(),exchangeLedger:payload=>client.exchangeLedger(payload)};
  const style=el('style');style.textContent=`
- .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:46px;min-height:46px;max-width:132px;padding:4px 7px;border:1px solid #d8e1e7;border-radius:24px;background:#fff;color:#243d54;cursor:pointer;font-weight:700;white-space:nowrap;overflow:hidden}.cf-gagyebu-trigger .cf-trigger-avatar{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;background:#eaf2fb;color:#1d507a;font-weight:800;overflow:hidden}.cf-gagyebu-trigger .cf-trigger-avatar img{width:100%;height:100%;object-fit:cover}.cf-gagyebu-trigger .cf-trigger-name{display:inline-block;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:13px}.cf-gagyebu-trigger .cf-trigger-chevron{flex:none;font-size:11px;color:#758397}.cf-gagyebu-trigger:focus-visible{outline:3px solid #315eaa;outline-offset:2px}@media(max-width:480px){.cf-gagyebu-trigger{max-width:104px;padding:3px 5px;gap:4px}.cf-gagyebu-trigger .cf-trigger-avatar{width:32px;height:32px}.cf-gagyebu-trigger .cf-trigger-name{font-size:12px}}
+ .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;min-width:44px;max-width:44px;height:44px;min-height:44px;padding:4px;border:1px solid #d8e1e7;border-radius:50%;background:#fff;color:#243d54;cursor:pointer;overflow:hidden}
+ .cf-gagyebu-trigger .cf-trigger-avatar{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;background:#eaf2fb;color:#1d507a;font-weight:800;overflow:hidden}
+ .cf-gagyebu-trigger .cf-trigger-avatar img{width:100%;height:100%;object-fit:cover}
+ .cf-gagyebu-trigger .cf-trigger-guest{width:24px;height:24px;color:#4f6278;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+ .cf-gagyebu-trigger:focus-visible{outline:3px solid #315eaa;outline-offset:2px}
+ @media(max-width:480px){.cf-gagyebu-trigger{width:42px;min-width:42px;max-width:42px;height:42px;min-height:42px;padding:3px}.cf-gagyebu-trigger .cf-trigger-avatar{width:32px;height:32px}}
+
  .cf-gagyebu-overlay{position:fixed;inset:0;background:#0e192c85;z-index:999999;display:grid;place-items:center;padding:16px}
  .cf-gagyebu-dialog{background:#fff;color:#172635;border-radius:18px;width:min(100%,420px);padding:22px;box-shadow:0 14px 50px #0003}
  .cf-gagyebu-dialog h2{margin:0 0 8px;font-size:22px}
@@ -119,9 +125,19 @@ export async function mountCloudflareWebAccount(changed){
    b.replaceChildren();
    b.classList.toggle('cf-trigger-signed-in',!!user);
    if(!user){
-    b.textContent='계정';
-    b.setAttribute('aria-label','한눈 공통 계정 로그인');
-    b.title='한눈 공통 계정 로그인';
+    // Icon-only trigger: preserve descriptive accessible name and tooltip.
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','cf-trigger-guest');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('aria-hidden','true');
+    const head=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    head.setAttribute('cx','12');head.setAttribute('cy','8');head.setAttribute('r','4');
+    const body=document.createElementNS('http://www.w3.org/2000/svg','path');
+    body.setAttribute('d','M4 21v-2a8 8 0 0 1 16 0v2');
+    svg.append(head,body);
+    b.append(svg);
+    b.setAttribute('aria-label','로그인');
+    b.title='로그인';
     continue;
    }
    const name=String(user.displayName||'한눈 계정').trim()||'한눈 계정';
@@ -138,10 +154,8 @@ export async function mountCloudflareWebAccount(changed){
      }
     }catch{}
    }
-   const label=el('span','cf-trigger-name',name);
-   const chevron=el('span','cf-trigger-chevron','⌄');
-   chevron.setAttribute('aria-hidden','true');
-   b.append(avatar,label,chevron);
+   // Header stays fixed-size on desktop and mobile; full name remains in the tooltip.
+   b.append(avatar);
    b.setAttribute('aria-label',name+' 계정 관리');
    b.title=name+' · 계정 관리';
   }
