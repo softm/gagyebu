@@ -1,6 +1,6 @@
 
 const WORKER='https://softm-hannun-account.softm.workers.dev';
-const CLIENT='https://softm.github.io/services/cloudflare-account/src/client.mjs?v=gagyebu-dedicated-api-v3';
+const CLIENT='./account-client.mjs?v=gagyebu-local-sdk-20261113';
 
 let mounted=null;
 let providerStatus={google:true,kakao:false,naver:false};
