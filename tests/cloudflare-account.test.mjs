@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 test('Cloudflare cutover only when encrypted D1 ledger is ready',()=>{
  const bridge=source('src/web-account.js');
- assert.match(bridge,/health\.features\?\.gagyebuLedger===true/);
+ assert.match(bridge,/health\.features\?\.gagyebuLedger!==true/);
  assert.match(bridge,/web-account-cloudflare\.js/);
  assert.doesNotMatch(bridge,/web-account-legacy\.js/);
  assert.match(bridge,/catch\{/);
@@ -43,7 +43,7 @@ test('signed-out view selects Google Kakao Naver; signed-in view omits SNS picke
   assert.match(ui,/승인 대기/);
   assert.match(ui,/client\.currentUser\?\.provider/);
   const bridge=source('src/web-account.js');
-  assert.match(bridge,/features\?\.gagyebuLedger===true/);
+  assert.match(bridge,/features\?\.gagyebuLedger!==true/);
 });
 test('Cloudflare deletion controls are disabled; native Android assets remain separate',()=>{
  const app=source('src/app.js');
@@ -55,7 +55,7 @@ test('transient Cloudflare outage never silently signs in to legacy Firebase',()
  const bridge=source('src/web-account.js');
  assert.match(bridge,/if\(!response\.ok\)throw Error/);
  assert.match(bridge,/throw Error\('Cloudflare 계정 서버에 연결하지 못했습니다/);
- assert.match(bridge,/health\.features\?\.gagyebuLedger===true/);
+ assert.match(bridge,/health\.features\?\.gagyebuLedger!==true/);
  assert.match(bridge,/loading=null/);
 });
 
