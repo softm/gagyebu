@@ -1,6 +1,6 @@
 
 const WORKER='https://softm-hannun-account.softm.workers.dev';
-const CLIENT='./account-client.mjs?v=gagyebu-local-sdk-20261113';
+const CLIENT='./account-client.mjs?v=gagyebu-local-sdk-syntax-fixed-20261113';
 
 let mounted=null;
 let providerStatus={google:true,kakao:false,naver:false};
