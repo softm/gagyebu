@@ -5,11 +5,17 @@ let impl=null,loading=null;
 async function backend(){
  if(impl)return impl;
  if(!loading)loading=(async()=>{
-   const response=await fetch(WORKER+'/health',{cache:'no-store',signal:AbortSignal.timeout(10000)});
-   if(!response.ok)throw Error('Cloudflare account health unavailable');
-   const health=await response.json();
-   if(!health.ok||!health.features?.gagyebuLedger)return import('./web-account-legacy.js');
-   return import('./web-account-cloudflare.js');
+   let cloudflareReady=false;
+   try{
+     const response=await fetch(WORKER+'/health',{cache:'no-store',signal:AbortSignal.timeout(8000)});
+     if(response.ok){
+       const health=await response.json();
+       cloudflareReady=health.ok===true&&health.features?.gagyebuLedger===true;
+     }
+   }catch{
+     // No account-module outage may erase or replace an offline ledger.
+   }
+   return cloudflareReady?import('./web-account-cloudflare.js'):import('./web-account-legacy.js');
  })().then(module=>{impl=module;return module;}).finally(()=>loading=null);
  return loading;
 }
