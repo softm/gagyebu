@@ -14,9 +14,9 @@ async function backend(){
   }catch{
    throw Error('Cloudflare 계정 서버에 연결하지 못했습니다. 기기에 저장한 기존 장부는 유지됩니다.');
   }
-  if(health?.ok!==true||health.features?.gagyebuLedger!==true)
-   throw Error('Cloudflare 암호화 장부 서비스가 준비되지 않았습니다. 기기 장부를 유지하고 나중에 다시 연결하세요.');
-  return import('./web-account-cloudflare.js?v=cloudflare-only-20261112');
+  if(health?.ok!==true)
+   throw Error('Cloudflare 계정 서버가 준비되지 않았습니다. 기기 장부를 유지하고 나중에 다시 연결하세요.');
+  return import('./web-account-cloudflare.js?v=gagyebu-isolated-worker-20261113');
  })().then(v=>(impl=v,v)).finally(()=>loading=null);
  return loading;
 }
