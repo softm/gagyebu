@@ -25,15 +25,15 @@
 - `pending`은 정식 지출/수입/잔액에서 제외. 사용자가 직접 확정.
 - 모든 금액은 KRW **정수 원 단위**로 저장하며, 부동소수점 금액 누적을 하지 않음.
 
-## 한눈 공통 계정
+## Cloudflare 공통 계정
 
-PC 웹은 Cloudflare Workers + D1 기반 공통 계정으로 단계적으로 이전 중입니다. Cloudflare의 `GAGYEBU_LEDGER_KEY_V1` Secret이 등록되고 API `/health`의 `features.gagyebuLedger=true`가 확인되면 Cloudflare 로그인·암호화 동기화가 활성화됩니다. 미설정일 때는 기존 Firebase 공통 계정과 장부 연결을 유지합니다.
+PC·Android 가계부 모두 Cloudflare Worker 공통 웹 로그인 및 D1 암호화 장부 API를 사용하도록 소스를 전환했습니다. **Firebase Auth와 Firestore SDK는 두 앱의 새 실행 경로에서 사용하지 않습니다.** PC는 `/health`에서 `features.gagyebuLedger=true`를 확인하며 비활성 또는 장애 시 Firebase로 돌아가지 않고 로컬 기록을 보존합니다.
 
-새 Cloudflare 가입자와 기존 Firebase 사용자는 자동으로 하나의 UID가 되지 않습니다. 비로그인 원본과 IndexedDB 계정별 장부는 삭제하지 않고, 최초 장부 합치기는 사용자 확인 후에만 합니다. SMS/알림 원문, 영수증 파일 및 Android 확인 대기 후보는 서버에 보내지 않습니다.
+Cloudflare UID는 기존 Firebase UID와 다릅니다. 이전 브라우저·휴대전화의 IndexedDB 로컬 장부가 한 건 발견되면 사용자 승인 후 복사하며, 원본은 삭제하지 않습니다. 과거 Firestore 서버에만 남아 있는 거래는 자동 이관되지 않으므로 기존 Firebase 프로젝트/암호화 키를 삭제하지 마세요.
 
-**Android는 아직 기존 Firebase 인증/동기화 경로를 사용합니다.** 새 PC Cloudflare 장부와의 동기화는 Android 전용 App Link·네이티브 인증 변경과 검증 이후에 가능합니다.
+문자·알림 원문, 영수증 파일, Android 확인 대기 후보는 Cloudflare D1 동기화에서 제외됩니다. 현재 GitHub 코드·CI 적용과 실제 휴대전화 로그인·같은 장부 조회 성공은 별개이므로 실기기 검증이 필요합니다.
 
-설치·검증 절차와 보안 경계: [Cloudflare PC 계정 전환 안내](docs/CLOUDFLARE_ACCOUNT.md).
+배포·이관·검증 절차: [Cloudflare 계정 이전 안내](docs/CLOUDFLARE_ACCOUNT.md).
 
 ## 로컬 실행
 
