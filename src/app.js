@@ -507,7 +507,20 @@ async function boot(){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalHost').innerHTML){closeModal();return;}if(e.key.toLowerCase()==='n'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!$('#modalHost').innerHTML&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();openTransaction();}});
  // SOFTM-PWA-SCOPE 날짜:20261022 : Pages 하위 경로의 PWA가 사이트 루트 범위를 요청해 등록 실패하지 않게 함
  if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register(new URL('../sw.js',import.meta.url),{scope:new URL('../',import.meta.url).pathname}).catch(err=>console.warn('PWA 등록 실패',err));
- connectAccount().catch(()=>{});
+ connectAccount().catch(err=>{
+  console.error('가계부 계정 초기화 실패:',err);
+  for(const id of ['desktopAccountSlot','mobileAccountSlot']){
+   const slot=document.getElementById(id);
+   if(!slot)continue;
+   const button=document.createElement('button');
+   button.type='button';button.className='cf-gagyebu-retry';
+   button.textContent='로그인';
+   button.setAttribute('aria-label','로그인 다시 시도');
+   button.style.cssText='min-height:40px;padding:8px 12px;border:1px solid #d8e1e7;border-radius:22px;background:white;color:#243d54;font-weight:700;cursor:pointer';
+   button.addEventListener('click',()=>connectAccount().catch(e=>alert('로그인 연결 오류: '+e.message)));
+   slot.replaceChildren(button);
+  }
+ });
 }
 boot();
 
