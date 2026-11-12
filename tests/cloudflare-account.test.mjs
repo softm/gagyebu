@@ -6,13 +6,15 @@ test('Cloudflare cutover only when encrypted D1 ledger is ready',()=>{
  const bridge=source('src/web-account.js');
  assert.match(bridge,/health\.features\?\.gagyebuLedger===true/);
  assert.match(bridge,/web-account-cloudflare\.js/);
- assert.match(bridge,/web-account-legacy\.js/);
+ assert.doesNotMatch(bridge,/web-account-legacy\\.js/);
  assert.match(bridge,/catch\{/);
 });
-test('legacy server ledger is retained as fallback',()=>{
- const legacy=source('src/web-account-legacy.js');
- assert.match(legacy,/suiteAuth\/gagyebu\/ledger/);
- assert.match(legacy,/mountWebAccount/);
+test('PC runtime has no Firebase SDK import or legacy account fallback',()=>{
+ const bridge=source('src/web-account.js');
+ const service=source('src/cloud.js');
+ assert.doesNotMatch(bridge,/web-account-legacy\\.js/);
+ assert.doesNotMatch(service,/gstatic\\.com|firebase-app\\.js|firebase-firestore\\.js/);
+ assert.match(service,/Cloudflare-only/);
 });
 test('Cloudflare site bridge is scoped to gagyebu and has no direct Firebase writes',()=>{
  const sourceText=source('src/web-account-cloudflare.js');
@@ -46,7 +48,7 @@ test('signed-out view selects Google Kakao Naver; signed-in view omits SNS picke
 test('Cloudflare deletion controls are disabled; native Android assets remain separate',()=>{
  const app=source('src/app.js');
  assert.match(app,/suiteAccount\?\.backend!=='cloudflare'/);
- assert.match(source('src/web-account.js'),/Cloudflare 보관소 삭제 기능은 아직 지원되지 않습니다/);
+ assert.match(source('src/web-account.js'),/Cloudflare 보관소 삭제는 데이터 이전 검증/);
 });
 
 test('transient Cloudflare outage never silently signs in to legacy Firebase',()=>{
