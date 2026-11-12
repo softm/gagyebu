@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
-test('Cloudflare cutover only when encrypted D1 ledger is ready',()=>{
+test('Cloudflare account UI is independent of ledger API health',()=>{
  const bridge=source('src/web-account.js');
- assert.match(bridge,/health\.features\?\.gagyebuLedger!==true/);
+ assert.doesNotMatch(bridge,/gagyebuLedger/);
  assert.match(bridge,/web-account-cloudflare\.js/);
  assert.doesNotMatch(bridge,/web-account-legacy\.js/);
- assert.match(bridge,/catch\{/);
+ assert.match(bridge,/mountCloudflareWebAccount/);
 });
 test('PC runtime has no Firebase SDK import or legacy account fallback',()=>{
  const bridge=source('src/web-account.js');
@@ -43,7 +43,7 @@ test('signed-out view selects Google Kakao Naver; signed-in view omits SNS picke
   assert.match(ui,/승인 대기/);
   assert.match(ui,/client\.currentUser\?\.provider/);
   const bridge=source('src/web-account.js');
-  assert.match(bridge,/features\?\.gagyebuLedger!==true/);
+  assert.doesNotMatch(bridge,/gagyebuLedger/);
 });
 test('Cloudflare deletion controls are disabled; native Android assets remain separate',()=>{
  const app=source('src/app.js');
@@ -51,12 +51,12 @@ test('Cloudflare deletion controls are disabled; native Android assets remain se
  assert.match(source('src/web-account.js'),/Cloudflare 보관소 삭제는 데이터 이전 검증/);
 });
 
-test('transient Cloudflare outage never silently signs in to legacy Firebase',()=>{
+test('login remains available without a health probe or Firebase fallback',()=>{
  const bridge=source('src/web-account.js');
- assert.match(bridge,/if\(!response\.ok\)throw Error/);
- assert.match(bridge,/throw Error\('Cloudflare 계정 서버에 연결하지 못했습니다/);
- assert.match(bridge,/health\.features\?\.gagyebuLedger!==true/);
+ assert.doesNotMatch(bridge,/fetch\(WORKER\+'\/health'/);
+ assert.doesNotMatch(bridge,/web-account-legacy\.js/);
  assert.match(bridge,/loading=null/);
+ assert.match(bridge,/mountCloudflareWebAccount/);
 });
 
 test('header triggers are fixed-size: logged-out user icon and logged-in avatar without name',()=>{
