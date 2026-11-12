@@ -17,4 +17,4 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Check JavaScript syntax
         run: |
-          for file in src/*.js functions/*.js functions/*.mjs; do node --check "$file"; done
+          for file in src/*.js src/*.mjs shared/platform/v1/*.mjs functions/*.js functions/*.mjs; do node --check "$file"; done
