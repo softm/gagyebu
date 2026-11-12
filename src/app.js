@@ -511,14 +511,28 @@ async function boot(){
   console.error('가계부 계정 초기화 실패:',err);
   for(const id of ['desktopAccountSlot','mobileAccountSlot']){
    const slot=document.getElementById(id);
-   if(!slot)continue;
-   const button=document.createElement('button');
-   button.type='button';button.className='cf-gagyebu-retry';
-   button.textContent='로그인';
+   if(!slot||slot.querySelector('.cf-gagyebu-trigger, softm-site-account'))continue;
+   const button=slot.querySelector('.account-entry-button')||document.createElement('button');
+   button.type='button';
+   button.className='account-entry-button';
+   button.removeAttribute('data-account-entry');
+   button.removeAttribute('aria-busy');
    button.setAttribute('aria-label','로그인 다시 시도');
-   button.style.cssText='min-height:40px;padding:8px 12px;border:1px solid #d8e1e7;border-radius:22px;background:white;color:#243d54;font-weight:700;cursor:pointer';
-   button.addEventListener('click',()=>connectAccount().catch(e=>alert('로그인 연결 오류: '+e.message)));
-   slot.replaceChildren(button);
+   button.title='로그인 다시 시도';
+   button.disabled=false;
+   if(!button.firstElementChild){
+    button.innerHTML='<svg class="account-entry-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2a7.5 7.5 0 0 1 15 0v2"/></svg>';
+   }
+   button.addEventListener('click',async()=>{
+    if(button.disabled)return;
+    button.disabled=true;
+    button.classList.add('is-loading');
+    button.setAttribute('aria-busy','true');
+    try{(await connectAccount()).open();}
+    catch(e){alert('로그인 연결 오류: '+e.message);}
+    finally{button.disabled=false;button.classList.remove('is-loading');button.removeAttribute('aria-busy');}
+   },{once:true});
+   if(!button.isConnected)slot.replaceChildren(button);
   }
  });
 }
