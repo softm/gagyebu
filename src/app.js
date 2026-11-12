@@ -531,7 +531,7 @@ async function boot(){
     try{(await connectAccount()).open();}
     catch(e){alert('로그인 연결 오류: '+e.message);}
     finally{button.disabled=false;button.classList.remove('is-loading');button.removeAttribute('aria-busy');}
-   },{once:true});
+   });
    if(!button.isConnected)slot.replaceChildren(button);
   }
  });
