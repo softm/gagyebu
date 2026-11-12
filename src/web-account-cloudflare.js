@@ -21,7 +21,7 @@ export async function mountCloudflareWebAccount(changed){
  if(mounted)return mounted;
  const {createCloudflareAccountClient}=await import(CLIENT);
  const client=createCloudflareAccountClient({baseUrl:WORKER,siteId:'gagyebu'});
- const account={backend:'cloudflare',get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:'Cloudflare 공통 계정'}:null;},
+ const account={backend:'cloudflare',get currentUser(){const user=client.currentUser;return user?{uid:user.uid,displayName:user.displayName||'한눈 계정',photoURL:user.photoURL||null}:null;},
   login:provider=>client.login(provider),logout:()=>client.logout(),exchangeLedger:payload=>client.exchangeLedger(payload)};
  const style=el('style');style.textContent=`
  .cf-gagyebu-trigger{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1px solid #d8e1e7;border-radius:50%;background:#fff;color:#243d54;cursor:pointer;font-weight:700}
@@ -31,7 +31,25 @@ export async function mountCloudflareWebAccount(changed){
  .cf-gagyebu-dialog p{font-size:14px;line-height:1.65;color:#5b6a7b}
  .cf-gagyebu-dialog button{display:block;width:100%;padding:13px;margin-top:10px;border:1px solid #d9e1eb;border-radius:10px;background:#f6f9fb;color:#192c43;cursor:pointer}
  .cf-gagyebu-dialog button.primary{background:#213f5e;color:#fff;border:0}
- .cf-gagyebu-dialog button:disabled{opacity:.45;cursor:not-allowed}
+ .cf-gagyebu-dialog button:disabled{cursor:not-allowed;opacity:.65;filter:saturate(.65)}
+ .cf-gagyebu-dialog .cf-provider{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;min-height:50px;font-weight:700;font-size:15px;border-radius:12px;transition:filter .15s ease}
+ .cf-gagyebu-dialog .cf-provider:not(:disabled):hover{filter:brightness(.97)}
+ .cf-gagyebu-dialog .cf-provider-google{background:#fff;color:#202124;border:1px solid #dadce0}
+ .cf-gagyebu-dialog .cf-provider-kakao{background:#fee500;color:#191919;border-color:#fee500}
+ .cf-gagyebu-dialog .cf-provider-naver{background:#03c75a;color:#fff;border-color:#03c75a}
+ .cf-provider .cf-provider-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex:none;font-size:19px;font-weight:900}
+ .cf-provider-google .cf-provider-mark{font-family:Arial,sans-serif;background:conic-gradient(#4285f4 0 28%,#34a853 28% 48%,#fbbc05 48% 68%,#ea4335 68% 85%,#4285f4 85%);background-clip:text;-webkit-background-clip:text;color:transparent}
+ .cf-provider-kakao .cf-provider-mark{position:relative}
+ .cf-provider-kakao .cf-provider-mark::before{content:"";display:block;background:#191919;width:22px;height:17px;border-radius:55%}
+ .cf-provider-kakao .cf-provider-mark::after{content:"";position:absolute;background:#191919;width:8px;height:8px;bottom:3px;left:4px;transform:rotate(28deg)}
+ .cf-provider-naver .cf-provider-mark{font-family:Arial,sans-serif;color:#fff}
+ .cf-gagyebu-dialog .cf-provider[disabled]{opacity:.62}
+ .cf-gagyebu-dialog .cf-account-actions{display:flex;align-items:center;gap:10px;padding:12px 0}
+ .cf-gagyebu-dialog .cf-account-actions .cf-account-avatar{display:grid;place-items:center;background:#edf4fa;border-radius:50%;width:44px;height:44px;color:#28445f;font-weight:800}
+ .cf-gagyebu-dialog .cf-account-actions p{margin:0}
+ .cf-gagyebu-dialog .cf-account-actions strong{color:#192c43}
+ .cf-gagyebu-dialog .cf-manage-link{display:block;text-align:center;margin-top:14px;color:#315f86;font-size:14px}
+ .cf-gagyebu-dialog button:focus-visible,.cf-gagyebu-dialog a:focus-visible{outline:3px solid #315eaa;outline-offset:3px}
  `;
  document.head.append(style);
  const overlay=el('div','cf-gagyebu-overlay');overlay.hidden=true;
@@ -57,28 +75,38 @@ export async function mountCloudflareWebAccount(changed){
   dialog.replaceChildren();
   dialog.append(el('h2','', '한눈 공통 계정'));
   const user=account.currentUser;
-  dialog.append(el('p','',user?'Cloudflare 계정으로 로그인되어 있습니다.':'Google·카카오·네이버 중 원하는 SNS로 공통 계정에 로그인하세요.'));
+  dialog.append(el('p','',user?'가계부 계정이 연결되어 있습니다.':'원하는 SNS로 로그인하면 가계부에 자동으로 연결됩니다.'));
   if(user){
-   dialog.append(el('p','', '로그인됨 · '+({google:'Google',kakao:'카카오',naver:'네이버'}[client.currentUser?.provider]||'한눈 공통 계정')+' · 장부는 암호화되어 D1에 저장됩니다.'));
-   const manage=el('a','', '공통 계정관리 열기');
+   const line=el('div','cf-account-actions');
+   const mark=el('span','cf-account-avatar',(account.currentUser?.displayName||'한')[0]);
+   const details=el('div');
+   details.append(el('strong','',account.currentUser?.displayName||'한눈 계정'));
+   details.append(el('p','', '현재 로그인 · '+({google:'Google',kakao:'카카오',naver:'네이버'}[client.currentUser?.provider]||'한눈 계정')));
+   line.append(mark,details);
+   dialog.append(line);
+   dialog.append(el('p','', '계정별 장부는 Cloudflare에서 암호화해 보관합니다.'));
+   const manage=el('a','cf-manage-link', '계정관리');
    manage.href=WORKER+'/account';manage.target='_blank';manage.rel='noopener noreferrer';
-   manage.style.display='block';manage.style.textAlign='center';manage.style.marginTop='14px';
+
    dialog.append(manage);
    action('로그아웃',async()=>{
      await account.logout();await changed(null);close();renderTriggers();
    },true);
   }else{
    for(const [id,label] of [['google','Google'],['kakao','카카오'],['naver','네이버']]){
-    if(providerStatus[id]){
-     action(label+'로 계속하기',async()=>{
-       // Common account hub chooses the OAuth provider; popup must open in this click.
-       const next=await account.login(id);
-       await changed(next);close();renderTriggers();
-     },id==='google');
-    }else{
-     const b=action(id==='naver'?label+' · 승인 대기':label+' · 연결 준비 중',async()=>{});
-     b.disabled=true;
-    }
+    const enabled=!!providerStatus[id];
+    const caption=enabled?label+'로 계속하기':label+(id==='naver'?' · 승인 대기':' · 연결 준비 중');
+    // No inert login choices: disabled providers remain visually identifiable.
+    const b=action(caption,async()=>{
+      const next=await account.login(id);
+      await changed(next);close();renderTriggers();
+    });
+    b.classList.add('cf-provider','cf-provider-'+id);
+    b.dataset.provider=id;
+    const icon=el('span','cf-provider-mark',id==='google'?'G':id==='naver'?'N':'');
+    icon.setAttribute('aria-hidden','true');
+    b.prepend(icon);
+    b.disabled=!enabled;
    }
   }
   action('닫기',async()=>close());
