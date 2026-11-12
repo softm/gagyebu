@@ -3,6 +3,16 @@ const WORKER='https://softm-hannun-account.softm.workers.dev';
 const CLIENT='https://softm.github.io/services/cloudflare-account/src/client.mjs?v=gagyebu-pc-1';
 
 let mounted=null;
+let providerStatus={google:true,kakao:false,naver:false};
+async function checkProviders(){
+ try{
+  const res=await fetch(WORKER+'/health',{cache:'no-store',signal:AbortSignal.timeout(7000)});
+  if(!res.ok)return;
+  const data=await res.json();
+  if(data?.providers)providerStatus={google:!!data.providers.google,kakao:!!data.providers.kakao,naver:!!data.providers.naver};
+ }catch{/* Keep last known provider state; never enable unverified SNS. */}
+}
+
 function el(tag,className,text){
  const node=document.createElement(tag);if(className)node.className=className;
  if(text!==undefined)node.textContent=text;return node;
@@ -31,7 +41,7 @@ export async function mountCloudflareWebAccount(changed){
  dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label','한눈 계정');
  overlay.append(dialog);document.body.append(overlay);
  function close(){overlay.hidden=true;overlay.style.display='none';}
- function show(){overlay.hidden=false;overlay.style.display='grid';render();}
+ function show(){overlay.hidden=false;overlay.style.display='grid';render();void checkProviders().then(()=>{if(!overlay.hidden)render();});}
  overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
  function action(text,callback,primary=false){
   const b=el('button',primary?'primary':'',text);
@@ -47,23 +57,30 @@ export async function mountCloudflareWebAccount(changed){
   dialog.replaceChildren();
   dialog.append(el('h2','', '한눈 공통 계정'));
   const user=account.currentUser;
-  dialog.append(el('p','',user?'Cloudflare 계정으로 로그인되어 있습니다.':'Google 계정으로 로그인하고 PC 가계부를 동기화하세요.'));
+  dialog.append(el('p','',user?'Cloudflare 계정으로 로그인되어 있습니다.':'Google·카카오·네이버 중 원하는 SNS로 공통 계정에 로그인하세요.'));
   if(user){
    dialog.append(el('p','', '로그인됨 · 계정별 장부는 암호화되어 D1에 저장됩니다.'));
+   const manage=el('a','', '공통 계정관리 열기');
+   manage.href=WORKER+'/account';manage.target='_blank';manage.rel='noopener noreferrer';
+   manage.style.display='block';manage.style.textAlign='center';manage.style.marginTop='14px';
+   dialog.append(manage);
    action('로그아웃',async()=>{
      await account.logout();await changed(null);close();renderTriggers();
    },true);
   }else{
-   action('Google로 계속하기',async()=>{
-     // client.login() opens the popup before its first await.
-     const next=await account.login();
-     await changed(next);close();renderTriggers();
-   },true);
+   for(const [id,label] of [['google','Google'],['kakao','카카오'],['naver','네이버']]){
+    if(providerStatus[id]){
+     action(label+'로 계속하기',async()=>{
+       // Common account hub chooses the OAuth provider; popup must open in this click.
+       const next=await account.login();
+       await changed(next);close();renderTriggers();
+     },id==='google');
+    }else{
+     const b=action(id==='naver'?label+' · 승인 대기':label+' · 연결 준비 중',async()=>{});
+     b.disabled=true;
+    }
+   }
   }
-  const manage=el('a','', '공통 계정관리 열기');
-  manage.href=WORKER+'/account';manage.target='_blank';manage.rel='noopener noreferrer';
-  manage.style.display='block';manage.style.textAlign='center';manage.style.marginTop='14px';
-  dialog.append(manage);
   action('닫기',async()=>close());
   dialog.append(message);message.textContent='';
  }
