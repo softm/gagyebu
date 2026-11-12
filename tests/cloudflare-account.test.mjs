@@ -31,6 +31,18 @@ test('local guest ledger and Android private candidates remain excluded from syn
  assert.match(database,/suiteKey=uid=>uid\?'suite-ledger:'/);
  assert.match(database,/:'main'/);
 });
+test('signed-out view selects Google Kakao Naver; signed-in view omits SNS picker',()=>{
+  const ui=source('src/web-account-cloudflare.js');
+  assert.match(ui,/\[\['google','Google'\],\['kakao','카카오'\],\['naver','네이버'\]\]/);
+  assert.match(ui,/const next=await account\.login\(id\)/);
+  assert.match(ui,/if\(user\)\{/);
+  assert.match(ui,/providerStatus\[id\]/);
+  assert.match(ui,/연결 준비 중/);
+  assert.match(ui,/승인 대기/);
+  assert.match(ui,/client\.currentUser\?\.provider/);
+  const bridge=source('src/web-account.js');
+  assert.match(bridge,/features\?\.gagyebuLedger===true/);
+});
 test('Cloudflare deletion controls are disabled; native Android assets remain separate',()=>{
  const app=source('src/app.js');
  assert.match(app,/suiteAccount\?\.backend!=='cloudflare'/);
