@@ -1,7 +1,7 @@
 import {startLedger} from './account-ledger.js';
 import {KINDS,COLORS,initialState,money,isoDate,monthKey,shiftMonth,getPeriod,currentPeriodMonth,getSummary,getAccountBalances,calculateExpression,duplicateOf,suggestCategory,parsePastedLines,parseCsv,validateBackup,createDemoState} from './domain.js';
 import {loadState,saveState,loadUserState,loadUserDirty,loadUserSynced,loadDeviceId,saveUserState,clearUserState} from './db.js';
-import {CloudService} from './cloud.js';
+import {CloudService} from './android-cloud.js';
 import {mountCommonAccount} from './common-account.js';
 let commonAccount=null;
 import {mergeGuestLedger,prepareLedgerMutation,rebaseOfflineChanges,resolveLedgerConflicts} from './ledger-sync.js';
