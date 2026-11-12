@@ -36,7 +36,10 @@
 <div id="modalHost"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input id="csvInput" type="file" accept=".csv,text/csv,text/plain" hidden/>
 <input id="jsonInput" type="file" accept=".json,application/json" hidden/>
-<script type="module" src="./src/app.js"></script>
+<script type="module">
+const isAndroidShell = navigator.userAgent.includes('SoftmGagyebuAndroid/');
+import(isAndroidShell ? './src/android-app.js' : './src/app.js');
+</script>
 </body>
 </html>
 
