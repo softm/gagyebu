@@ -4,18 +4,111 @@ service cloud.firestore {
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
+    function shortString(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+    function optionalString(data, key, max) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= max);
+    }
+    function validSyncFields(data, id) {
+      return data.id == id
+        && data.revision is int && data.revision >= 1 && data.revision <= 2147483647
+        && shortString(data.createdAt, 40) && shortString(data.updatedAt, 40)
+        && optionalString(data, 'sourceImportKey', 300);
+    }
+    function revisionAdvances() {
+      return (!('revision' in resource.data) && request.resource.data.revision == 1)
+        || (resource.data.revision is int && request.resource.data.revision == resource.data.revision + 1);
+    }
+    function validTombstone(data, id) {
+      return data.keys().hasOnly(['id','deleted','revision','createdAt','updatedAt','sourceImportKey'])
+        && validSyncFields(data, id) && data.deleted == true;
+    }
+    function validAccount(data, id) {
+      return data.keys().hasAll(['id','name','kind','openingBalance','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly(['id','name','kind','openingBalance','revision','createdAt','updatedAt','sourceImportKey'])
+        && validSyncFields(data, id) && shortString(data.name, 32)
+        && data.kind in ['cash','bank','card'] && data.openingBalance is int
+        && data.openingBalance >= -1000000000000000 && data.openingBalance <= 1000000000000000;
+    }
+    function validCategory(data, id) {
+      return data.keys().hasAll(['id','name','type','icon','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly(['id','name','type','icon','revision','createdAt','updatedAt','sourceImportKey'])
+        && validSyncFields(data, id) && shortString(data.name, 32)
+        && data.type in ['expense','income'] && data.icon is string && data.icon.size() <= 16;
+    }
+    function validTransaction(data, id, uid) {
+      return data.keys().hasAll(['id','kind','date','amount','title','status','accountId','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly([
+          'id','kind','date','amount','expression','title','accountId','toAccountId','categoryId','memo','status',
+          'attachmentPath','refundOf','createdAt','updatedAt','source','sourceText','revision','sourceImportKey'
+        ])
+        && validSyncFields(data, id) && data.kind in ['expense','income','transfer','repayment','refund']
+        && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.amount is int && data.amount > 0 && data.amount <= 1000000000000000
+        && shortString(data.title, 90) && data.status in ['pending','confirmed']
+        && shortString(data.accountId, 128) && optionalString(data, 'toAccountId', 128)
+        && optionalString(data, 'categoryId', 128) && optionalString(data, 'memo', 1000)
+        && optionalString(data, 'expression', 180) && optionalString(data, 'refundOf', 128)
+        && optionalString(data, 'source', 32) && optionalString(data, 'sourceText', 500)
+        && (!(('attachmentPath') in data) || data.attachmentPath == null
+          || (data.attachmentPath is string && data.attachmentPath.matches('^users/' + uid + '/receipts/[0-9a-fA-F-]{36}$')));
+    }
+    function validConfig(data) {
+      return data.keys().hasAll(['version','schemaVersion','settings','budgets','initialized','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','schemaVersion','settings','budgets','initialized','revision','createdAt','updatedAt'])
+        && data.version == 1 && data.schemaVersion == 2 && data.initialized == true
+        && data.revision is int && data.revision >= 1 && data.revision <= 2147483647
+        && shortString(data.createdAt, 40) && shortString(data.updatedAt, 40)
+        && data.settings is map && data.settings.size() <= 16
+        && data.settings.keys().hasAll(['monthlyBudget','periodStartDay','theme','hasOnboarded'])
+        && data.settings.keys().hasOnly(['monthlyBudget','periodStartDay','theme','hasOnboarded'])
+        && data.settings.monthlyBudget is int && data.settings.monthlyBudget >= 0 && data.settings.monthlyBudget <= 1000000000000000
+        && data.settings.periodStartDay is int && data.settings.periodStartDay >= 1 && data.settings.periodStartDay <= 28
+        && data.settings.theme in ['light','dark'] && data.settings.hasOnboarded is bool
+        && data.budgets is map && data.budgets.size() <= 500;
+    }
+    function validEvent(data, id, uid) {
+      return data.keys().hasAll(['id','entityType','entityId','action','actorUid','deviceId','createdAt','changedFields','before','after'])
+        && data.keys().hasOnly(['id','entityType','entityId','action','actorUid','deviceId','createdAt','changedFields','before','after'])
+        && data.id == id && data.actorUid == uid && shortString(data.entityId, 128)
+        && data.entityType in ['transaction','account','category','setting','budget','ledger']
+        && data.action in ['create','update','delete','import','restore']
+        && shortString(data.deviceId, 128) && shortString(data.createdAt, 40)
+        && data.changedFields is list && data.changedFields.size() <= 32
+        && (data.before == null || (data.before is map && data.before.size() <= 16))
+        && (data.after == null || (data.after is map && data.after.size() <= 16));
+    }
+
     match /users/{uid}/ledger/{documentId} {
       allow read: if isOwner(uid) && documentId == 'config';
-      allow create, update, delete: if isOwner(uid) && documentId == 'config';
+      allow create: if isOwner(uid) && documentId == 'config' && validConfig(request.resource.data) && request.resource.data.revision == 1;
+      allow update: if isOwner(uid) && documentId == 'config' && validConfig(request.resource.data) && revisionAdvances();
+      allow delete: if false;
     }
     match /users/{uid}/accounts/{id} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && (validAccount(request.resource.data,id) || validTombstone(request.resource.data,id)) && request.resource.data.revision == 1;
+      allow update: if isOwner(uid) && (validAccount(request.resource.data,id) || validTombstone(request.resource.data,id)) && revisionAdvances();
+      allow delete: if false;
     }
     match /users/{uid}/categories/{id} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && (validCategory(request.resource.data,id) || validTombstone(request.resource.data,id)) && request.resource.data.revision == 1;
+      allow update: if isOwner(uid) && (validCategory(request.resource.data,id) || validTombstone(request.resource.data,id)) && revisionAdvances();
+      allow delete: if false;
     }
     match /users/{uid}/transactions/{id} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && (validTransaction(request.resource.data,id,uid) || validTombstone(request.resource.data,id)) && request.resource.data.revision == 1;
+      allow update: if isOwner(uid) && (validTransaction(request.resource.data,id,uid) || validTombstone(request.resource.data,id)) && revisionAdvances();
+      allow delete: if false;
+    }
+    match /users/{uid}/events/{id} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && validEvent(request.resource.data,id,uid);
+      allow update: if isOwner(uid) && request.resource.data == resource.data;
+      allow delete: if false;
     }
     match /{document=**} {
       allow read, write: if false;

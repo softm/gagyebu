@@ -29,11 +29,14 @@
 
 - **Google · Apple**: Firebase Authentication 로그인(콘솔에서 공급자 활성화 필요).
 - **카카오 · 네이버**: SNS OAuth → Firebase Functions 비밀키 서버 검증 → Firebase custom token 발급.
-- **Cloud Firestore**: 사용자 UID별 `transactions`, `accounts`, `categories`, `ledger/config`에 거래·자산·예산·설정·수정 이력 보관.
+- **Cloud Firestore**: 사용자 UID별 `transactions`, `accounts`, `categories`, `ledger/config`, `events` 문서에 거래·자산·예산·설정·수정 이력 보관.
 - **Cloud Storage**: 영수증 원본을 개인 UID 경로에 보관. 이미지 데이터는 Firestore 문서에 인라인 저장하지 않음.
-- **기기 데이터 보호**: 비로그인 기록은 기존 IndexedDB에 유지, 로그인 후 사용자가 명시적으로 가져오기. 실패 시 재전송/JSON 백업 제공.
+- **기기 데이터 보호**: 비로그인 기록은 기존 IndexedDB에 유지, 로그인 후 미리보기·백업을 거쳐 명시적으로 가져오기. 반복 가져오기는 원본 키로 중복 방지.
+- **충돌 방지**: 문서별 `revision`을 Firestore 트랜잭션에서 확인하며, 삭제도 tombstone으로 남겨 수정/삭제 충돌을 감지. 충돌 시 내 기기/서버 버전을 건별 선택.
+- **서버 확인 상태**: 로컬 저장과 Firestore 서버 확인을 구분하며 오프라인 변경은 재연결 시 자동 3-way 병합·재전송.
+- **계정 삭제**: JSON 백업과 재확인, 최근 로그인 검증 후 UID의 Firestore·Storage·Firebase Auth 데이터를 서버에서 삭제.
 
-**설정 미완료:** `src/firebase-config.js`의 설정값이 비어 있어 배포 직후에는 로컬 기능만 동작합니다. 실제 SNS 로그인/Firestore 저장을 활성화하려면 [Firebase 연결 가이드](docs/FIREBASE_SETUP.md)대로 프로젝트, 인증 공급자, Cloud Functions Secrets, Firestore/Storage Rules를 설정해야 합니다. 서로 다른 소셜 제공자 간 계정 연결은 아직 지원하지 않습니다.
+**설정 미완료:** `src/firebase-config.js`의 설정값과 `authProviderConfig`가 비어 있어 배포 직후에는 로컬 기능만 동작합니다. 실제 SNS 로그인/Firestore 저장을 활성화하려면 [Firebase 연결 가이드](docs/FIREBASE_SETUP.md)대로 **가계부 전용 프로젝트**를 선택하고 인증 공급자, Cloud Functions Secrets, Firestore/Storage Rules를 설정해야 합니다. 서로 다른 소셜 제공자 간 계정 연결은 아직 지원하지 않습니다.
 
 ## 로컬 실행
 
@@ -47,8 +50,11 @@ python3 -m http.server 8000
 테스트:
 
 ```sh
-node --test tests/*.test.mjs
-node --check src/app.js
+npm ci
+npm test
+npm run check
+# JDK 21 이상 필요. 운영 프로젝트에 닿지 않는 demo-gagyebu 에뮬레이터 사용
+npm run test:rules
 ```
 
 ## 배포
@@ -68,4 +74,4 @@ node --check src/app.js
 - 초기 카드 미상환액은 신용카드 자산의 `초기 잔액`에 입력합니다.
 - 개인/공동 정산의 전체 복식부기 및 다중통화는 후속 설계 대상.
 
-기획 문서: `docs/PRD.md`.
+문서: [제품 기준](docs/PRD.md) · [Firebase 설정](docs/FIREBASE_SETUP.md) · [스키마/마이그레이션](docs/DATA_MIGRATION.md) · [개인정보 및 삭제](docs/PRIVACY.md).

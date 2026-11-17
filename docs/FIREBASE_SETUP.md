@@ -13,6 +13,7 @@
 | Firestore 장부 저장 | 구현 | Firestore 생성 + 보안 규칙 배포 |
 | Firebase Storage 사진 보관 | 구현 | Blaze 플랜 + Storage 생성 + 보안 규칙 배포 + CORS |
 | 사용자의 기기 기록 가져오기 | 구현 | 로그인 후 설정에서 명시적으로 실행 |
+| 계정·UID 데이터 완전 삭제 | 구현 | `deleteAccountData` Functions 배포 후 실계정 검증 |
 | 원격 실제 계정 로그인/저장 검증 | 미검증 | 사용자 Firebase 프로젝트 설정 후 진행 |
 
 > **가계부용 Firebase 프로젝트의 `projectId`와 웹 앱 설정이 아직 제공되지 않았습니다.** 빈 설정 상태에서는 이전 IndexedDB 가계부만 동작합니다. Firebase와의 실제 데이터 저장 완료를 주장하지 않습니다.
@@ -22,7 +23,7 @@
 1. [Firebase Console](https://console.firebase.google.com/) → 프로젝트 추가. 이 가계부에 **전용 프로젝트** 사용을 권장합니다.
 2. 프로젝트 설정 → `내 앱` → 웹 앱 `</>` 등록. 앱 이름 `gagyebu-web`.
 3. 웹 SDK 구성 `apiKey`, `authDomain`, `projectId`, `appId`, `storageBucket` 복사.
-4. [GitHub `src/firebase-config.js`](https://github.com/softm/gagyebu/blob/main/src/firebase-config.js)의 빈 문자열에 값을 입력하고 `main`에 반영합니다. **웹 API 키와 앱 ID는 클라이언트용 공개 식별값**이며 Cloud Functions 비밀키나 서비스 계정 JSON은 넣지 마세요.
+4. [GitHub `src/firebase-config.js`](https://github.com/softm/gagyebu/blob/main/src/firebase-config.js)의 빈 문자열에 값을 입력합니다. 실제 설정이 끝난 공급자만 `authProviderConfig`에서 `true`로 바꿉니다. **웹 API 키와 앱 ID는 클라이언트용 공개 식별값**이며 Cloud Functions 비밀키나 서비스 계정 JSON은 넣지 마세요.
 5. Authentication → Sign-in method → **Google 활성화**. Apple도 원한다면 Apple 공급자를 별도로 활성화합니다.
 6. Authentication → Settings → Authorized domains → `softm.github.io` 추가. 커스텀 운영 도메인을 사용할 때도 별도 추가합니다.
 7. Firestore Database 생성. 사용량·위치 요구에 따라 리전을 선택하되 국내 이용자 기준 서울 `asia-northeast3` 권장. **Firestore 리전은 생성 후 변경하기 어렵습니다.**
@@ -56,26 +57,28 @@ Apple Developer에서 Service ID, Apple Sign in with Apple, Private Key 등을 �
 
 ## 5. 서버 비밀값과 배포
 
-Firebase CLI에 로그인한 다음 **가계부 프로젝트에서만** 배포합니다.
+Firebase CLI에 로그인한 다음 **가계부 프로젝트 ID를 사용자와 다시 확인한 뒤에만** 배포합니다. 이 저장소는 `.firebaserc`를 커밋하지 않으므로 다른 프로젝트의 활성 별칭을 그대로 믿지 않습니다.
 
 ```bash
-npm install -g firebase-tools
-firebase login
+npx -y firebase-tools@latest login
 # 필요하면 .firebaserc.example을 .firebaserc로 복사 후 프로젝트 ID 교체
-firebase use YOUR_GAGYEBU_FIREBASE_PROJECT_ID
+npx -y firebase-tools@latest use YOUR_GAGYEBU_FIREBASE_PROJECT_ID
 cd functions && npm install && cd ..
 
-firebase functions:secrets:set KAKAO_REST_API_KEY
-firebase functions:secrets:set KAKAO_CLIENT_SECRET
-firebase functions:secrets:set NAVER_CLIENT_ID
-firebase functions:secrets:set NAVER_CLIENT_SECRET
+npx -y firebase-tools@latest functions:secrets:set KAKAO_REST_API_KEY
+npx -y firebase-tools@latest functions:secrets:set KAKAO_CLIENT_SECRET
+npx -y firebase-tools@latest functions:secrets:set NAVER_CLIENT_ID
+npx -y firebase-tools@latest functions:secrets:set NAVER_CLIENT_SECRET
 
-firebase deploy --only firestore:rules,storage,functions:oauthExchange --project YOUR_GAGYEBU_FIREBASE_PROJECT_ID
+npx -y firebase-tools@latest deploy --only firestore:rules,storage,functions:oauthExchange,functions:deleteAccountData --project YOUR_GAGYEBU_FIREBASE_PROJECT_ID
 ```
 
 - Google/Apple 로그인에는 커스텀 SNS 함수가 필요하지 않습니다.
 - 카카오/네이버는 Cloud Functions v2 `asia-northeast3`에서 *authorization code → provider token → provider user ID 확인 → Firebase custom token 발급*을 수행합니다.
-- 로그인 콜백은 서버에서 등록된 주소만 허용하고, 클라이언트는 64자리 난수 `state`를 세션에 보관하여 CSRF를 검증합니다.
+- `deleteAccountData`는 최근 5분 이내 로그인 토큰만 허용하고 해당 UID의 Storage 영수증, Firestore 하위 데이터, Firebase Auth 계정을 순서대로 삭제합니다. 중간 실패 재시도를 포함한 실계정 검증이 필요합니다.
+- 로그인 콜백은 서버에서 등록된 주소/Origin만 허용하고, 클라이언트는 64자리 난수 `state`와 PKCE `code_verifier`를 세션에 보관합니다. 카카오·네이버 토큰 교환에는 S256 PKCE를 적용하며 인가코드·토큰·시크릿을 로그에 남기지 않습니다.
+- OAuth 교환 함수는 인스턴스별 IP 기준 분당 12회 제한과 최대 인스턴스 제한을 적용합니다. 이 제한은 분산형 전역 quota가 아니므로 운영 트래픽에는 Cloud Armor/API Gateway 등 별도 중앙 제한을 검토해야 합니다.
+- App Check는 Pages 도메인과 실제 로그인 흐름을 먼저 검증한 뒤 활성화해야 합니다. 현재 코드는 App Check를 강제하지 않으므로 운영 활성화 전 reCAPTCHA Enterprise 공급자 등록과 Functions enforcement 여부를 결정하세요.
 - **서비스 계정 비밀키, 카카오/Naver Secret을 GitHub 코드나 Pages에 올리지 마세요.**
 - Firebase Functions 및 Cloud Storage는 청구 계정 연결이 필요할 수 있으며 사용량에 따른 비용이 발생할 수 있습니다.
 
@@ -93,10 +96,11 @@ gcloud storage buckets update gs://YOUR_STORAGE_BUCKET --cors-file=storage-cors.
 
 ```text
 users/{firebaseAuthUid}/
-  ledger/config                  // settings, budgets, events, version
-  accounts/{accountId}           // 현금·은행·카드 자산
-  categories/{categoryId}       // 지출/수입 카테고리
-  transactions/{transactionId}  // 거래·미확정·이체·환불·메모·계산식·영수증 경로
+  ledger/config                  // schemaVersion=2, settings, budgets, revision
+  accounts/{accountId}           // 현금·은행·카드 자산, revision/tombstone
+  categories/{categoryId}       // 지출/수입 카테고리, revision/tombstone
+  transactions/{transactionId}  // 거래·미확정·이체·환불·메모·계산식·영수증 경로, revision/tombstone
+  events/{eventId}               // 엔터티별 append-only 작업 이력
 
 Cloud Storage:
 users/{firebaseAuthUid}/receipts/{uuid} // 이미지 원본 (인증된 본인만 접근)
@@ -105,15 +109,17 @@ IndexedDB:
 main                           // 비로그인 장부 (이전 사용자의 자료 보존)
 user:{uid}                     // 현재 기기의 로그인 장부 캐시
 synced:{uid}                   // 마지막 동기화 확인 상태
- dirty:{uid}                   // 아직 확인되지 않은 로컬 수정 여부
+dirty:{uid}                    // 아직 서버 확인되지 않은 로컬 수정 여부
 ```
 
-- 거래 원문, 자산, 카테고리, 예산, 설정, 기록 이벤트가 사용자별 Firestore에 저장됩니다.
+- 거래 원문, 자산, 카테고리, 예산, 설정, 기록 이벤트가 사용자별 Firestore에 저장됩니다. 이전 `ledger/config.events` 배열은 로그인 시 같은 이벤트 ID의 `events` 문서로 먼저 복사한 뒤 배열 필드를 제거하므로 중간 실패 후 재실행해도 중복되지 않습니다.
+- 엔터티와 설정은 `revision`을 Firestore 트랜잭션에서 비교합니다. 삭제는 tombstone으로 남겨 다른 기기의 동시 수정과 충돌할 때 자동 소실을 막습니다.
 - 영수증 원본은 Storage에 저장하고 Firestore에는 소유자별 Storage 경로만 저장합니다. Firestore 1MiB 문서 제한을 피합니다.
 - `firestore.rules`와 `storage.rules`는 **인증된 본인 UID**에만 해당 경로 읽기/쓰기를 허용합니다.
 - 같은 `uid`로 로그인하면 다른 기기에서도 실시간 최신 거래를 구독합니다. 서로 다른 SNS UID는 **별도 장부**로 유지합니다. 이메일이 같아도 자동으로 병합하지 않습니다.
 - Cloud Firestore는 **E2EE가 아닌 Firebase 플랫폼 보안 저장**입니다. 브라우저 IndexedDB 캐시 또한 기기 자체 암호화는 제공하지 않습니다.
-- 동기화가 끝나지 않은 경우 사용자의 수정사항은 기기에 남습니다. 설정의 `미전송 기록 다시 동기화`로 재시도해야 할 수 있으며, 네트워크 오류가 지속되면 JSON 백업을 우선 내려받으세요.
+- 동기화가 끝나지 않은 경우 사용자의 수정사항은 사용자별 IndexedDB에 남습니다. 서버 재연결 시 자동으로 3-way 병합·재전송하며 같은 항목이 충돌하면 사용자가 내 기기/서버 버전을 건별 선택할 때까지 업로드하지 않습니다. 수동 `미전송 기록 다시 동기화`도 제공합니다.
+- Firestore 웹 캐시는 `persistentMultipleTabManager`를 사용해 같은 브라우저의 여러 탭을 조정합니다. 그래도 동일 레코드를 거의 동시에 수정하는 탭/기기는 revision 충돌 UI로 확인해야 하며 운영 프로젝트에서 실브라우저 교차 탭 검수가 필요합니다.
 - 대용량 기록은 문서별 저장으로 분산하지만, 현재 UI에서는 검색을 위한 전체 거래 내역을 구독합니다. 수만 건 이상의 데이터에서는 월별 쿼리/페이지네이션으로 변경해야 합니다.
 
 ## 8. 실제 검수 시나리오 (설정 완료 후)
@@ -128,6 +134,7 @@ synced:{uid}                   // 마지막 동기화 확인 상태
 8. 브라우저 네트워크 차단 뒤 수정→로컬 캐시 보존→연결 재개→동기화 및 중복 없음 확인.
 9. Guest 장부 생성 후 로그인 → 설정에서 명시적 가져오기 → 기존 원격 장부가 삭제되지 않고 수입·지출·자산 내역 일치 확인.
 10. JSON 백업·전체 복원·CSV 내보내기, 카드대금 상환 중복집계 방지 확인.
+11. 테스트 계정에서 백업 후 완전 삭제 → Firestore/Storage/Auth와 기기 UID 캐시 제거 확인. 운영 금융기록이 있는 계정에는 사용하지 않습니다.
 
 ## 9. 아직 포함되지 않은 기능
 

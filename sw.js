@@ -1,4 +1,4 @@
-const CACHE='gagyebu-static-v2';
+const CACHE='gagyebu-static-v3';
 const CORE=['./','./index.html','./src/app.js','./src/domain.js','./src/db.js','./src/cloud.js','./src/ledger-sync.js','./src/firebase-config.js','./src/styles.css','./manifest.webmanifest','./icons/icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]));});

@@ -14,4 +14,6 @@ export const socialConfig={
   kakaoRestApiKey:'',  // Public Kakao REST API key, NOT client_secret.
   naverClientId:''      // Public Naver Client ID, NOT Client Secret.
 };
+/** Set true only after the corresponding provider is enabled and configured. */
+export const authProviderConfig={google:false,apple:false,kakao:false,naver:false};
 export const cloudRegion='asia-northeast3';

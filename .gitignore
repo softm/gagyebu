@@ -1,0 +1,13 @@
+.DS_Store
+.serena/
+.firebase/
+.firebaserc
+.env
+.env.*
+!.env.example
+node_modules/
+functions/node_modules/
+coverage/
+*-debug.log
+service-account*.json
+*-service-account.json

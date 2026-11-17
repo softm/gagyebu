@@ -4,12 +4,19 @@ export const ALLOWED_REDIRECTS=new Set([
  'http://localhost:8000/',
  'http://127.0.0.1:8000/'
 ]);
+export const ALLOWED_ORIGINS=new Set(['https://softm.github.io','http://localhost:8000','http://127.0.0.1:8000']);
+
+export function checkAllowedOrigin(origin,allow=ALLOWED_ORIGINS){
+ if(typeof origin!=='string'||!allow.has(origin))throw new Error('허용되지 않은 요청 출처입니다.');
+ return true;
+}
 
 export function checkOAuthRequest(input,allow=ALLOWED_REDIRECTS){
  if(!input||!['kakao','naver'].includes(input.provider))throw new Error('지원하지 않는 SNS 로그인 방법입니다.');
  if(typeof input.code!=='string'||input.code.length<8||input.code.length>2048||!/^[A-Za-z0-9._~+\/-]+$/.test(input.code))throw new Error('로그인 인증 코드 형식이 잘못되었습니다.');
  if(typeof input.redirectUri!=='string'||!allow.has(input.redirectUri))throw new Error('등록되지 않은 로그인 리디렉션 주소입니다.');
  if(typeof input.state!=='string'||!/^[0-9a-f]{64}$/.test(input.state))throw new Error('로그인 요청 상태가 잘못되었습니다.');
+ if(typeof input.codeVerifier!=='string'||!/^[A-Za-z0-9_-]{43,128}$/.test(input.codeVerifier))throw new Error('PKCE 검증값 형식이 잘못되었습니다.');
  return true;
 }
 
@@ -23,11 +30,11 @@ async function requireJson(response){
 export async function exchangeOAuth(input,{fetchImpl=fetch,createCustomToken,secrets,allowedRedirects=ALLOWED_REDIRECTS}){
  checkOAuthRequest(input,allowedRedirects);
  if(typeof createCustomToken!=='function')throw new Error('서버 인증 모듈이 초기화되지 않았습니다.');
- const {provider,code,redirectUri,state}=input;
+ const {provider,code,redirectUri,state,codeVerifier}=input;
  let profile,uid;
  if(provider==='kakao'){
   if(!secrets.kakaoRestApiKey||!secrets.kakaoClientSecret)throw new Error('카카오 서버 비밀키가 등록되지 않았습니다.');
-  const params=new URLSearchParams({grant_type:'authorization_code',client_id:secrets.kakaoRestApiKey,client_secret:secrets.kakaoClientSecret,redirect_uri:redirectUri,code});
+  const params=new URLSearchParams({grant_type:'authorization_code',client_id:secrets.kakaoRestApiKey,client_secret:secrets.kakaoClientSecret,redirect_uri:redirectUri,code,code_verifier:codeVerifier});
   const data=await requireJson(await fetchImpl('https://kauth.kakao.com/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=utf-8'},body:params}));
   if(!data.access_token)throw new Error('카카오 인증 토큰이 없습니다.');
   profile=await requireJson(await fetchImpl('https://kapi.kakao.com/v2/user/me',{headers:{Authorization:`Bearer ${data.access_token}`}}));
@@ -35,9 +42,8 @@ export async function exchangeOAuth(input,{fetchImpl=fetch,createCustomToken,sec
   uid=`kakao:${String(profile.id)}`;
  } else {
   if(!secrets.naverClientId||!secrets.naverClientSecret)throw new Error('네이버 서버 비밀키가 등록되지 않았습니다.');
-  const url=new URL('https://nid.naver.com/oauth2.0/token');
-  for(const [key,value] of Object.entries({grant_type:'authorization_code',client_id:secrets.naverClientId,client_secret:secrets.naverClientSecret,code,state}))url.searchParams.set(key,value);
-  const data=await requireJson(await fetchImpl(url.toString(),{method:'GET'}));
+  const params=new URLSearchParams({grant_type:'authorization_code',client_id:secrets.naverClientId,client_secret:secrets.naverClientSecret,code,state,redirect_uri:redirectUri,code_verifier:codeVerifier});
+  const data=await requireJson(await fetchImpl('https://nid.naver.com/oauth2.0/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=utf-8'},body:params}));
   if(!data.access_token)throw new Error('네이버 인증 토큰이 없습니다.');
   const user=await requireJson(await fetchImpl('https://openapi.naver.com/v1/nid/me',{headers:{Authorization:`Bearer ${data.access_token}`}}));
   if(user.resultcode!=='00'||!user.response?.id)throw new Error('네이버 프로필 인증에 실패했습니다.');

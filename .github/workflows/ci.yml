@@ -13,8 +13,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run domain tests
-        run: node --test tests/*.test.mjs
-      - name: Check JavaScript syntax
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install dependencies
         run: |
-          for file in src/*.js functions/*.js functions/*.mjs; do node --check "$file"; done
+          npm ci
+          npm ci --prefix functions
+      - name: Run domain tests
+        run: npm test
+      - name: Run Firebase security rules tests
+        run: npm run test:rules
+      - name: Check JavaScript syntax
+        run: npm run check

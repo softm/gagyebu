@@ -1,0 +1,19 @@
+{
+  "name": "gagyebu",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "for file in src/*.js functions/*.js functions/*.mjs; do node --check \"$file\"; done",
+    "test:rules": "npx -y firebase-tools@latest emulators:exec --only firestore,storage --project demo-gagyebu \"GAGYEBU_RULES_TEST=1 node --test tests/rules.test.mjs\"",
+    "verify": "npm run test && npm run check && npm run test:rules"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.0.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6"
+  }
+}
